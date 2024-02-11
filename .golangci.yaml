@@ -1,0 +1,12 @@
+# Options for analysis running.
+linters-settings:
+  # See the dedicated "linters-settings" documentation section.
+  option: value
+linters:
+  disable-all: true
+  enable:
+    - gosimple 
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
