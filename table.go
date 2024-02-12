@@ -245,7 +245,7 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 	case NORMAL:
 		switch msg := msg.(type) {
 		case WidthMsg:
-			m.updateWidth(msg)
+			m.UpdateWidth(msg)
 		case delPrevKeyMsg:
 			m.prevKey = ""
 		case tea.KeyMsg:
@@ -260,6 +260,8 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 				m.MoveLeft(1)
 			case key.Matches(msg, m.KeyMap.AddRow):
 				m.AddRow()
+				m.MoveDown(1)
+				m.InsertMode()
 			case key.Matches(msg, m.KeyMap.DelRow):
 				cmd := m.DelRow()
 				cmds = append(cmds, cmd)
@@ -278,14 +280,14 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 			case key.Matches(msg, m.KeyMap.GotoBottom):
 				m.GotoBottom()
 			case key.Matches(msg, m.KeyMap.InsertMode):
-				m.mode = INSERT
+				m.InsertMode()
 			}
 			m.prevKey = msg.String()
 		}
 	case INSERT:
 		switch msg := msg.(type) {
 		case WidthMsg:
-			m.updateWidth(msg)
+			m.UpdateWidth(msg)
 		case delPrevKeyMsg:
 			m.prevKey = ""
 		case tea.KeyMsg:
@@ -305,7 +307,11 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m TableModel) updateWidth(msg WidthMsg) {
+func (m *TableModel) InsertMode() {
+	m.mode = INSERT
+}
+
+func (m TableModel) UpdateWidth(msg WidthMsg) {
 	m.cols[m.cursor.x].Width = max(msg.width, m.cols[m.cursor.x].Width)
 }
 
@@ -373,28 +379,45 @@ func (m TableModel) Rows() []Row {
 // SetRows sets a new rows state.
 func (m *TableModel) SetRows(r []Row) {
 	m.rows = r
-	m.UpdateViewport()
 }
 
 func (m *TableModel) AddRow() {
+	if m.prevKey == "v" {
+		m.AddColumn()
+		return
+	}
 	newRow := make(Row, len(m.cols))
-	for i := 0; i < len(m.cols); i++ {
+	for i := range m.cols {
 		newRow[i] = NewCell("")
 	}
 	m.insertRow(m.cursor.y+1, newRow)
+	m.UpdateViewport()
 }
 
 func (m *TableModel) DelRow() tea.Cmd {
 	if m.prevKey == "d" {
 		m.deleteRow(m.cursor.y)
+		m.UpdateViewport()
 	}
-	return delPrevKeyCmd()
+	return clearPrevKeyCmd()
+}
+
+func (m *TableModel) AddColumn() {
+	var rows []Row
+	cell := NewCell("")
+	for i := range m.rows {
+		rows = append(rows, insertCell(m.rows[i], m.cursor.x+1, cell))
+	}
+	m.SetRows(rows)
+
+	newCol := insertCol(m.cols, m.cursor.x+1, Column{Title: "New", Width: 10})
+	m.SetColumns(newCol)
+	m.MoveRight(1)
 }
 
 // SetColumns sets a new columns state.
 func (m *TableModel) SetColumns(c []Column) {
 	m.cols = c
-	m.UpdateViewport()
 }
 
 // SetWidth sets the width of the viewport of the table.
@@ -573,9 +596,29 @@ func (m *TableModel) deleteRow(idx int) {
 	m.SetRows(rows)
 }
 
+func insertCell(r Row, idx int, cell Cell) Row {
+	var row Row
+	if len(r) == idx { // nil or empty slice or after last element
+		row = append(r, cell)
+	}
+	row = append(r[:idx+1], r[idx:]...) // index < len(a)
+	row[idx] = cell
+	return row
+}
+
+func insertCol(c []Column, idx int, col Column) []Column {
+	var newCol []Column
+	if len(c) == idx { // nil or empty slice or after last element
+		newCol = append(c, col)
+	}
+	newCol = append(c[:idx+1], c[idx:]...) // index < len(a)
+	newCol[idx] = col
+	return newCol
+}
+
 type delPrevKeyMsg struct{}
 
-func delPrevKeyCmd() tea.Cmd {
+func clearPrevKeyCmd() tea.Cmd {
 	return tea.Tick(time.Millisecond*500, func(t time.Time) tea.Msg {
 		return delPrevKeyMsg{}
 	})
