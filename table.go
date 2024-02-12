@@ -260,7 +260,6 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 				m.MoveLeft(1)
 			case key.Matches(msg, m.KeyMap.AddRow):
 				m.AddRow()
-				m.MoveDown(1)
 				m.InsertMode()
 			case key.Matches(msg, m.KeyMap.DelRow):
 				cmd := m.DelRow()
@@ -391,7 +390,7 @@ func (m *TableModel) AddRow() {
 		newRow[i] = NewCell("")
 	}
 	m.insertRow(m.cursor.y+1, newRow)
-	m.UpdateViewport()
+	m.MoveDown(1)
 }
 
 func (m *TableModel) DelRow() tea.Cmd {
