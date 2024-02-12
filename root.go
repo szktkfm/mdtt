@@ -163,8 +163,8 @@ func NewRoot() model {
 		BorderBottom(true).
 		Bold(false)
 	s.Selected = s.Selected.
-		Foreground(lipgloss.Color("229")).
-		Background(lipgloss.Color("57")).
+		Foreground(lipgloss.Color("16")).
+		Background(lipgloss.Color("111")).
 		Bold(false)
 	t.SetStyles(s)
 
