@@ -262,7 +262,7 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 				m.MoveLeft(1)
 			case key.Matches(msg, m.KeyMap.AddRow):
 				m.AddRow()
-				m.InsertMode()
+				m.switchMode(INSERT)
 			case key.Matches(msg, m.KeyMap.DelRow):
 				cmd := m.DelRow()
 				cmds = append(cmds, cmd)
@@ -281,7 +281,7 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 			case key.Matches(msg, m.KeyMap.GotoBottom):
 				m.GotoBottom()
 			case key.Matches(msg, m.KeyMap.InsertMode):
-				m.InsertMode()
+				m.switchMode(INSERT)
 			}
 			m.prevKey = msg.String()
 		}
@@ -294,7 +294,7 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 		case tea.KeyMsg:
 			switch {
 			case key.Matches(msg, m.KeyMap.NormalMode):
-				m.mode = NORMAL
+				m.switchMode(NORMAL)
 			default:
 				newCell, cmd := m.rows[m.cursor.y][m.cursor.x].Update(msg)
 				m.rows[m.cursor.y][m.cursor.x] = newCell
@@ -308,8 +308,8 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m *TableModel) InsertMode() {
-	m.mode = INSERT
+func (m *TableModel) switchMode(mode int) {
+	m.mode = mode
 }
 
 func (m TableModel) UpdateWidth(msg WidthMsg) {
@@ -545,15 +545,20 @@ func (m TableModel) headersView() string {
 
 func (m *TableModel) renderRow(rowID int) string {
 	var s = make([]string, 0, len(m.cols))
-	for i, value := range m.rows[rowID] {
+	for i, cell := range m.rows[rowID] {
 		style := lipgloss.NewStyle().Width(m.cols[i].Width).MaxWidth(m.cols[i].Width).Inline(true)
 
 		var renderedCell string
 		// selected
 		if i == m.cursor.x && rowID == m.cursor.y {
-			renderedCell = m.styles.Selected.Render(style.Render(value.Value()))
+			//TODO: text inputのviewを呼び出してtextにsetする
+			if m.mode == INSERT {
+				renderedCell = m.styles.Selected.Render(style.Render(cell.View()))
+			} else {
+				renderedCell = m.styles.Selected.Render(style.Render(cell.Value()))
+			}
 		} else {
-			renderedCell = m.styles.Cell.Render(style.Render(value.Value()))
+			renderedCell = m.styles.Cell.Render(style.Render(cell.Value()))
 		}
 		s = append(s, renderedCell)
 	}
@@ -585,10 +590,10 @@ func clamp(v, low, high int) int {
 
 func (m *TableModel) insertRow(idx int, row Row) {
 	var rows []Row
-	if len(m.rows) == idx { // nil or empty slice or after last element
+	if len(m.rows) == idx {
 		rows = append(m.rows, row)
 	} else {
-		rows = append(m.rows[:idx+1], m.rows[idx:]...) // index < len(a)
+		rows = append(m.rows[:idx+1], m.rows[idx:]...)
 	}
 	rows[idx] = row
 	m.SetRows(rows)
@@ -596,20 +601,20 @@ func (m *TableModel) insertRow(idx int, row Row) {
 
 func (m *TableModel) deleteRow(idx int) {
 	var rows []Row
-	if len(m.rows) == idx { // nil or empty slice or after last element
+	if len(m.rows) == idx {
 		rows = m.rows[:idx-1]
 	} else {
-		rows = append(m.rows[:idx], m.rows[idx+1:]...) // index < len(a)
+		rows = append(m.rows[:idx], m.rows[idx+1:]...)
 	}
 	m.SetRows(rows)
 }
 
 func (m *TableModel) deleteColumn(idx int) {
 	var cols []Column
-	if len(m.cols) == idx { // nil or empty slice or after last element
+	if len(m.cols) == idx {
 		cols = m.cols[:idx-1]
 	} else {
-		cols = append(m.cols[:idx], m.cols[idx+1:]...) // index < len(a)
+		cols = append(m.cols[:idx], m.cols[idx+1:]...)
 	}
 	m.SetColumns(cols)
 
@@ -622,10 +627,10 @@ func (m *TableModel) deleteColumn(idx int) {
 
 func insertCell(r Row, idx int, cell Cell) Row {
 	var row Row
-	if len(r) == idx { // nil or empty slice or after last element
+	if len(r) == idx {
 		row = append(r, cell)
 	} else {
-		row = append(r[:idx+1], r[idx:]...) // index < len(a)
+		row = append(r[:idx+1], r[idx:]...)
 	}
 	row[idx] = cell
 	return row
@@ -633,11 +638,10 @@ func insertCell(r Row, idx int, cell Cell) Row {
 
 func insertCol(c []Column, idx int, col Column) []Column {
 	var newCol []Column
-	if len(c) == idx { // nil or empty slice or after last element
+	if len(c) == idx {
 		newCol = append(c, col)
 	} else {
-
-		newCol = append(c[:idx+1], c[idx:]...) // index < len(a)
+		newCol = append(c[:idx+1], c[idx:]...)
 	}
 	newCol[idx] = col
 	return newCol
@@ -645,10 +649,10 @@ func insertCol(c []Column, idx int, col Column) []Column {
 
 func deleteCell(r Row, idx int) Row {
 	var row Row
-	if len(r) == idx { // nil or empty slice or after last element
+	if len(r) == idx {
 		row = r[:idx-1]
 	} else {
-		row = append(r[:idx], r[idx+1:]...) // index < len(a)
+		row = append(r[:idx], r[idx+1:]...)
 	}
 	return row
 }

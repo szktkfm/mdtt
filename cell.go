@@ -1,10 +1,9 @@
 package mdtt
 
 import (
-	"fmt"
-
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/mattn/go-runewidth"
 )
 
@@ -27,6 +26,9 @@ func NewCell(value string) Cell {
 	ti.Focus()
 	ti.CharLimit = 156
 	ti.SetValue(value)
+	ti.Prompt = ""
+	ti.Cursor.Style = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("205"))
 	return Cell{textInput: ti, err: nil}
 }
 
@@ -57,9 +59,7 @@ func updateWidthCmd(width int) tea.Cmd {
 }
 
 func (m Cell) View() string {
-	return fmt.Sprintf(
-		m.textInput.View(),
-	) + "\n"
+	return m.textInput.View() + "\n"
 }
 
 func (m Cell) Value() string {
