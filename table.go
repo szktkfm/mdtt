@@ -399,7 +399,12 @@ func (m *TableModel) DelRow() tea.Cmd {
 	if m.prevKey == "d" {
 		m.deleteRow(m.cursor.y)
 		m.UpdateViewport()
+		return clearPrevKeyCmd()
+	} else if m.prevKey == "v" {
+		m.deleteColumn(m.cursor.x)
+		m.UpdateViewport()
 	}
+
 	return clearPrevKeyCmd()
 }
 
@@ -582,8 +587,9 @@ func (m *TableModel) insertRow(idx int, row Row) {
 	var rows []Row
 	if len(m.rows) == idx { // nil or empty slice or after last element
 		rows = append(m.rows, row)
+	} else {
+		rows = append(m.rows[:idx+1], m.rows[idx:]...) // index < len(a)
 	}
-	rows = append(m.rows[:idx+1], m.rows[idx:]...) // index < len(a)
 	rows[idx] = row
 	m.SetRows(rows)
 }
@@ -592,8 +598,25 @@ func (m *TableModel) deleteRow(idx int) {
 	var rows []Row
 	if len(m.rows) == idx { // nil or empty slice or after last element
 		rows = m.rows[:idx-1]
+	} else {
+		rows = append(m.rows[:idx], m.rows[idx+1:]...) // index < len(a)
 	}
-	rows = append(m.rows[:idx], m.rows[idx+1:]...) // index < len(a)
+	m.SetRows(rows)
+}
+
+func (m *TableModel) deleteColumn(idx int) {
+	var cols []Column
+	if len(m.cols) == idx { // nil or empty slice or after last element
+		cols = m.cols[:idx-1]
+	} else {
+		cols = append(m.cols[:idx], m.cols[idx+1:]...) // index < len(a)
+	}
+	m.SetColumns(cols)
+
+	var rows []Row
+	for i := range m.rows {
+		rows = append(rows, deleteCell(m.rows[i], idx))
+	}
 	m.SetRows(rows)
 }
 
@@ -601,8 +624,9 @@ func insertCell(r Row, idx int, cell Cell) Row {
 	var row Row
 	if len(r) == idx { // nil or empty slice or after last element
 		row = append(r, cell)
+	} else {
+		row = append(r[:idx+1], r[idx:]...) // index < len(a)
 	}
-	row = append(r[:idx+1], r[idx:]...) // index < len(a)
 	row[idx] = cell
 	return row
 }
@@ -611,10 +635,22 @@ func insertCol(c []Column, idx int, col Column) []Column {
 	var newCol []Column
 	if len(c) == idx { // nil or empty slice or after last element
 		newCol = append(c, col)
+	} else {
+
+		newCol = append(c[:idx+1], c[idx:]...) // index < len(a)
 	}
-	newCol = append(c[:idx+1], c[idx:]...) // index < len(a)
 	newCol[idx] = col
 	return newCol
+}
+
+func deleteCell(r Row, idx int) Row {
+	var row Row
+	if len(r) == idx { // nil or empty slice or after last element
+		row = r[:idx-1]
+	} else {
+		row = append(r[:idx], r[idx+1:]...) // index < len(a)
+	}
+	return row
 }
 
 type delPrevKeyMsg struct{}
