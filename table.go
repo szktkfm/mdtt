@@ -136,10 +136,15 @@ type Styles struct {
 func DefaultStyles() Styles {
 	return Styles{
 		Selected: lipgloss.NewStyle().Bold(true).
-			Foreground(lipgloss.Color("225")).
-			Background(lipgloss.Color("34")),
-		Header: lipgloss.NewStyle().Bold(true).Padding(0, 1),
-		Cell:   lipgloss.NewStyle().Padding(0, 1),
+			Foreground(lipgloss.Color("17")).
+			Background(lipgloss.Color("4")),
+		Header: lipgloss.NewStyle().Bold(true).Padding(0, 1).
+			BorderStyle(lipgloss.NormalBorder()).
+			BorderForeground(lipgloss.Color("240")).
+			BorderBottom(true).
+			Bold(false),
+
+		Cell: lipgloss.NewStyle().Padding(0, 1),
 	}
 }
 
@@ -310,6 +315,12 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 
 func (m *TableModel) switchMode(mode int) {
 	m.mode = mode
+	if mode == INSERT {
+		m.styles.Selected = lipgloss.NewStyle().Bold(true)
+		m.UpdateViewport()
+	} else {
+		m.SetStyles(DefaultStyles())
+	}
 }
 
 func (m TableModel) UpdateWidth(msg WidthMsg) {
@@ -534,6 +545,7 @@ func (m *TableModel) GotoBottom() {
 // }
 
 func (m TableModel) headersView() string {
+	// selectしたheaderをstyleをinheritしてview
 	var s = make([]string, 0, len(m.cols))
 	for _, col := range m.cols {
 		style := lipgloss.NewStyle().Width(col.Width).MaxWidth(col.Width).Inline(true)

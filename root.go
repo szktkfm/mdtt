@@ -157,15 +157,15 @@ func NewRoot() model {
 	)
 
 	s := DefaultStyles()
-	s.Header = s.Header.
-		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(lipgloss.Color("240")).
-		BorderBottom(true).
-		Bold(false)
-	s.Selected = s.Selected.
-		Foreground(lipgloss.Color("16")).
-		Background(lipgloss.Color("111")).
-		Bold(false)
+	// s.Header = s.Header.
+	// 	BorderStyle(lipgloss.NormalBorder()).
+	// 	BorderForeground(lipgloss.Color("240")).
+	// 	BorderBottom(true).
+	// 	Bold(false)
+	// s.Selected = s.Selected.
+	// 	Foreground(lipgloss.Color("16")).
+	// 	Background(lipgloss.Color("111")).
+	// 	Bold(false)
 	t.SetStyles(s)
 
 	m := model{t}
