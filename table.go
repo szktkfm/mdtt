@@ -38,7 +38,7 @@ type NaiveRow []string
 
 // Column defines the table structure.
 type Column struct {
-	Title string
+	Title Cell
 	Width int
 }
 
@@ -250,7 +250,7 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 	}
 
 	switch m.mode {
-	case NORMAL:
+	case NORMAL, HEADER:
 		switch msg := msg.(type) {
 		case WidthMsg:
 			m.UpdateWidth(msg)
@@ -429,7 +429,7 @@ func (m *TableModel) AddColumn() {
 	}
 	m.SetRows(rows)
 
-	newCol := insertCol(m.cols, m.cursor.x+1, Column{Title: "New", Width: 10})
+	newCol := insertCol(m.cols, m.cursor.x+1, Column{Title: NewCell(""), Width: 10})
 	m.SetColumns(newCol)
 	m.MoveRight(1)
 }
@@ -476,6 +476,11 @@ func (m *TableModel) SetCursor(n int) {
 // It can not go above the first row.
 func (m *TableModel) MoveUp(n int) {
 	m.cursor.y = clamp(m.cursor.y-n, 0, len(m.rows)-1)
+
+	if m.cursor.y == 0 {
+		m.switchMode(HEADER)
+	}
+
 	switch {
 	case m.start == 0:
 		m.viewport.SetYOffset(clamp(m.viewport.YOffset, 0, m.cursor.y))
@@ -490,6 +495,11 @@ func (m *TableModel) MoveUp(n int) {
 // MoveDown moves the selection down by any number of rows.
 // It can not go below the last row.
 func (m *TableModel) MoveDown(n int) {
+	if m.cursor.y == 0 && m.mode == HEADER {
+		m.switchMode(NORMAL)
+		return
+	}
+
 	m.cursor.y = clamp(m.cursor.y+n, 0, len(m.rows)-1)
 	m.UpdateViewport()
 
@@ -549,9 +559,14 @@ func (m *TableModel) GotoBottom() {
 func (m TableModel) headersView() string {
 	// selectしたheaderをstyleをinheritしてview
 	var s = make([]string, 0, len(m.cols))
-	for _, col := range m.cols {
-		style := lipgloss.NewStyle().Width(col.Width).MaxWidth(col.Width).Inline(true)
-		renderedCell := style.Render(col.Title)
+	for i, col := range m.cols {
+		var style lipgloss.Style
+		if i == m.cursor.x && m.mode == HEADER {
+			style = m.styles.Selected.PaddingRight(col.Width - len(col.Title.Value()))
+		} else {
+			style = lipgloss.NewStyle().Width(col.Width).MaxWidth(col.Width).Inline(true)
+		}
+		renderedCell := style.Render(col.Title.Value())
 		s = append(s, m.styles.Header.Render(renderedCell))
 	}
 	return lipgloss.JoinHorizontal(lipgloss.Left, s...)
@@ -564,8 +579,7 @@ func (m *TableModel) renderRow(rowID int) string {
 
 		var renderedCell string
 		// selected
-		if i == m.cursor.x && rowID == m.cursor.y {
-			//TODO: text inputのviewを呼び出してtextにsetする
+		if i == m.cursor.x && rowID == m.cursor.y && m.mode != HEADER {
 			if m.mode == INSERT {
 				renderedCell = m.styles.Selected.Render(style.Render(cell.View()))
 			} else {

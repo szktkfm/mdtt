@@ -9,6 +9,8 @@ import (
 const (
 	NORMAL = iota
 	INSERT
+	HEADER
+	HEADER_INSERT
 )
 
 var baseStyle = lipgloss.NewStyle().
@@ -40,10 +42,10 @@ func (m model) View() string {
 
 func NewRoot() model {
 	columns := []Column{
-		{Title: "Rank", Width: 4},
-		{Title: "City", Width: 20},
-		{Title: "Country", Width: 10},
-		{Title: "Population", Width: 20},
+		{Title: NewCell("Rank"), Width: 4},
+		{Title: NewCell("City"), Width: 20},
+		{Title: NewCell("Country"), Width: 10},
+		{Title: NewCell("Population"), Width: 20},
 	}
 
 	rows := []NaiveRow{
