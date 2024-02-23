@@ -1,6 +1,7 @@
 package mdtt
 
 import (
+	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -16,20 +17,22 @@ type WidthMsg struct {
 }
 
 type Cell struct {
-	textInput textinput.Model
+	textInput textarea.Model
 	err       error
 }
 
 func NewCell(value string) Cell {
-	ti := textinput.New()
-	ti.Placeholder = "Pikachu"
-	ti.Focus()
-	ti.CharLimit = 156
-	ti.SetValue(value)
-	ti.Prompt = ""
-	ti.Cursor.Style = lipgloss.NewStyle().
+	ta := textarea.New()
+	ta.Placeholder = "Pikachu"
+	ta.ShowLineNumbers = false
+	ta.SetHeight(2)
+	ta.Focus()
+	ta.CharLimit = 156
+	ta.SetValue(value)
+	ta.Prompt = ""
+	ta.Cursor.Style = lipgloss.NewStyle().
 		Foreground(lipgloss.Color("205"))
-	return Cell{textInput: ti, err: nil}
+	return Cell{textInput: ta, err: nil}
 }
 
 func (m Cell) Init() tea.Cmd {
@@ -39,6 +42,9 @@ func (m Cell) Init() tea.Cmd {
 func (m Cell) Update(msg tea.Msg) (Cell, tea.Cmd) {
 	var cmd tea.Cmd
 
+	// h := m.textInput.LineInfo().Height
+	// fmt.Println(h)
+
 	switch msg := msg.(type) {
 	// We handle errors just like any other message
 	case errMsg:
@@ -47,7 +53,9 @@ func (m Cell) Update(msg tea.Msg) (Cell, tea.Cmd) {
 	}
 
 	m.textInput, cmd = m.textInput.Update(msg)
-
+	// h := strings.Count(m.textInput.Value(), "\n") + 2
+	h := m.textInput.LineCount() + 1
+	m.textInput.SetHeight(h)
 	width := runewidth.StringWidth(m.textInput.Value())
 	return m, tea.Batch(cmd, updateWidthCmd(width))
 }
@@ -59,7 +67,7 @@ func updateWidthCmd(width int) tea.Cmd {
 }
 
 func (m Cell) View() string {
-	return m.textInput.View() + "\n"
+	return m.textInput.View()
 }
 
 func (m Cell) Value() string {

@@ -24,6 +24,8 @@ type TableModel struct {
 	start    int
 	end      int
 	mode     int
+
+	register Register
 }
 
 type Cursor struct {
@@ -38,9 +40,11 @@ type NaiveRow []string
 
 // Column defines the table structure.
 type Column struct {
-	Title string
+	Title Cell
 	Width int
 }
+
+type Register interface{}
 
 // KeyMap defines keybindings. It satisfies to the help.KeyMap interface, which
 // is used to render the menu.
@@ -51,6 +55,8 @@ type KeyMap struct {
 	Left         key.Binding
 	AddRow       key.Binding
 	DelRow       key.Binding
+	Yank         key.Binding
+	Paste        key.Binding
 	PageUp       key.Binding
 	PageDown     key.Binding
 	HalfPageUp   key.Binding
@@ -88,6 +94,14 @@ func DefaultKeyMap() KeyMap {
 		DelRow: key.NewBinding(
 			key.WithKeys("d"),
 			key.WithHelp("d", "Add row"),
+		),
+		Yank: key.NewBinding(
+			key.WithKeys("y"),
+			key.WithHelp("y", "Copy"),
+		),
+		Paste: key.NewBinding(
+			key.WithKeys("p"),
+			key.WithHelp("p", "Paste"),
 		),
 		PageUp: key.NewBinding(
 			key.WithKeys("b", "pgup"),
@@ -163,7 +177,7 @@ type Option func(*TableModel)
 func New(opts ...Option) TableModel {
 	m := TableModel{
 		cursor:   Cursor{0, 0},
-		viewport: viewport.New(0, 20),
+		viewport: viewport.New(0, 10),
 
 		KeyMap: DefaultKeyMap(),
 		styles: DefaultStyles(),
@@ -203,6 +217,7 @@ func WithNaiveRows(rows []NaiveRow) Option {
 				m.rows[i][j] = NewCell(c)
 			}
 		}
+		m.SetHeight(len(rows))
 	}
 }
 
@@ -249,7 +264,7 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 	}
 
 	switch m.mode {
-	case NORMAL:
+	case NORMAL, HEADER:
 		switch msg := msg.(type) {
 		case WidthMsg:
 			m.UpdateWidth(msg)
@@ -266,11 +281,25 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 			case key.Matches(msg, m.KeyMap.Left):
 				m.MoveLeft(1)
 			case key.Matches(msg, m.KeyMap.AddRow):
-				m.AddRow()
+				if m.mode == HEADER {
+					return m, nil
+				}
+				m.AddEmpty()
 				m.switchMode(INSERT)
+				m.rows[m.cursor.y][m.cursor.x].Update(msg)
+
 			case key.Matches(msg, m.KeyMap.DelRow):
-				cmd := m.DelRow()
+				if m.mode == HEADER {
+					return m, nil
+				}
+				cmd := m.Del()
 				cmds = append(cmds, cmd)
+			case key.Matches(msg, m.KeyMap.Yank):
+				m.Copy()
+
+			case key.Matches(msg, m.KeyMap.Paste):
+				m.Paste()
+
 			case key.Matches(msg, m.KeyMap.PageUp):
 				m.MoveUp(m.viewport.Height)
 			case key.Matches(msg, m.KeyMap.PageDown):
@@ -286,11 +315,15 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 			case key.Matches(msg, m.KeyMap.GotoBottom):
 				m.GotoBottom()
 			case key.Matches(msg, m.KeyMap.InsertMode):
-				m.switchMode(INSERT)
+				if m.mode == HEADER {
+					m.switchMode(HEADER_INSERT)
+				} else {
+					m.switchMode(INSERT)
+				}
 			}
 			m.prevKey = msg.String()
 		}
-	case INSERT:
+	case INSERT, HEADER_INSERT:
 		switch msg := msg.(type) {
 		case WidthMsg:
 			m.UpdateWidth(msg)
@@ -299,11 +332,14 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 		case tea.KeyMsg:
 			switch {
 			case key.Matches(msg, m.KeyMap.NormalMode):
-				m.switchMode(NORMAL)
+				if m.mode == HEADER_INSERT {
+					m.switchMode(HEADER)
+				} else {
+					m.switchMode(NORMAL)
+
+				}
 			default:
-				newCell, cmd := m.rows[m.cursor.y][m.cursor.x].Update(msg)
-				m.rows[m.cursor.y][m.cursor.x] = newCell
-				m.UpdateViewport()
+				cmd := m.UpdateFocusedCell(msg)
 				cmds = append(cmds, cmd)
 			}
 			m.prevKey = msg.String()
@@ -313,18 +349,54 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+func (m *TableModel) UpdateFocusedCell(msg tea.KeyMsg) tea.Cmd {
+	if m.mode == INSERT {
+		newCell, cmd := m.rows[m.cursor.y][m.cursor.x].Update(msg)
+		m.rows[m.cursor.y][m.cursor.x] = newCell
+		m.UpdateViewport()
+		return cmd
+	} else if m.mode == HEADER_INSERT {
+		newCell, cmd := m.cols[m.cursor.x].Title.Update(msg)
+		m.cols[m.cursor.x].Title = newCell
+		m.UpdateViewport()
+		return cmd
+	}
+	return nil
+}
+
 func (m *TableModel) switchMode(mode int) {
 	m.mode = mode
 	if mode == INSERT {
 		m.styles.Selected = lipgloss.NewStyle().Bold(true)
-		m.UpdateViewport()
 	} else {
 		m.SetStyles(DefaultStyles())
 	}
+	m.UpdateViewport()
 }
 
 func (m TableModel) UpdateWidth(msg WidthMsg) {
 	m.cols[m.cursor.x].Width = max(msg.width, m.cols[m.cursor.x].Width)
+}
+
+func (m *TableModel) Copy() {
+	//TODO
+	// Rowのコピーだけを考える。今のところ
+	var row Row
+	for _, cell := range m.rows[m.cursor.y] {
+		row = append(row, NewCell(cell.Value()))
+	}
+	m.register = row
+}
+
+func (m *TableModel) Paste() {
+	//TODO
+	// Rowのペーストだけを考える。今のところ
+	if m.register != nil {
+		m.insertRow(m.cursor.y+1, m.register.(Row))
+	}
+	m.SetHeight(len(m.rows))
+	m.MoveDown(1)
+	m.UpdateViewport()
 }
 
 // Focused returns the focus state of the table.
@@ -393,7 +465,7 @@ func (m *TableModel) SetRows(r []Row) {
 	m.rows = r
 }
 
-func (m *TableModel) AddRow() {
+func (m *TableModel) AddEmpty() {
 	if m.prevKey == "v" {
 		m.AddColumn()
 		return
@@ -403,12 +475,14 @@ func (m *TableModel) AddRow() {
 		newRow[i] = NewCell("")
 	}
 	m.insertRow(m.cursor.y+1, newRow)
+	m.SetHeight(len(m.rows))
 	m.MoveDown(1)
 }
 
-func (m *TableModel) DelRow() tea.Cmd {
+func (m *TableModel) Del() tea.Cmd {
 	if m.prevKey == "d" {
 		m.deleteRow(m.cursor.y)
+		m.SetHeight(len(m.rows))
 		m.UpdateViewport()
 		return clearPrevKeyCmd()
 	} else if m.prevKey == "v" {
@@ -427,7 +501,7 @@ func (m *TableModel) AddColumn() {
 	}
 	m.SetRows(rows)
 
-	newCol := insertCol(m.cols, m.cursor.x+1, Column{Title: "New", Width: 10})
+	newCol := insertCol(m.cols, m.cursor.x+1, Column{Title: NewCell(""), Width: 10})
 	m.SetColumns(newCol)
 	m.MoveRight(1)
 }
@@ -445,8 +519,8 @@ func (m *TableModel) SetWidth(w int) {
 
 // SetHeight sets the height of the viewport of the table.
 func (m *TableModel) SetHeight(h int) {
-	m.viewport.Height = h
-	m.UpdateViewport()
+	// m.viewport.Height = h
+	// m.UpdateViewport()
 }
 
 // Height returns the viewport height of the table.
@@ -473,7 +547,11 @@ func (m *TableModel) SetCursor(n int) {
 // MoveUp moves the selection up by any number of rows.
 // It can not go above the first row.
 func (m *TableModel) MoveUp(n int) {
+	if m.cursor.y == 0 {
+		m.switchMode(HEADER)
+	}
 	m.cursor.y = clamp(m.cursor.y-n, 0, len(m.rows)-1)
+
 	switch {
 	case m.start == 0:
 		m.viewport.SetYOffset(clamp(m.viewport.YOffset, 0, m.cursor.y))
@@ -488,6 +566,11 @@ func (m *TableModel) MoveUp(n int) {
 // MoveDown moves the selection down by any number of rows.
 // It can not go below the last row.
 func (m *TableModel) MoveDown(n int) {
+	if m.cursor.y == 0 && m.mode == HEADER {
+		m.switchMode(NORMAL)
+		return
+	}
+
 	m.cursor.y = clamp(m.cursor.y+n, 0, len(m.rows)-1)
 	m.UpdateViewport()
 
@@ -547,9 +630,20 @@ func (m *TableModel) GotoBottom() {
 func (m TableModel) headersView() string {
 	// selectしたheaderをstyleをinheritしてview
 	var s = make([]string, 0, len(m.cols))
-	for _, col := range m.cols {
-		style := lipgloss.NewStyle().Width(col.Width).MaxWidth(col.Width).Inline(true)
-		renderedCell := style.Render(col.Title)
+	for i, col := range m.cols {
+		var style lipgloss.Style
+		if i == m.cursor.x && m.mode == HEADER {
+			style = m.styles.Selected.PaddingRight(col.Width - len(col.Title.Value()))
+		} else {
+			style = lipgloss.NewStyle().Width(col.Width).MaxWidth(col.Width).Inline(true)
+		}
+
+		var renderedCell string
+		if i == m.cursor.x && m.mode == HEADER_INSERT {
+			renderedCell = style.Render(col.Title.View())
+		} else {
+			renderedCell = style.Render(col.Title.Value())
+		}
 		s = append(s, m.styles.Header.Render(renderedCell))
 	}
 	return lipgloss.JoinHorizontal(lipgloss.Left, s...)
@@ -558,20 +652,33 @@ func (m TableModel) headersView() string {
 func (m *TableModel) renderRow(rowID int) string {
 	var s = make([]string, 0, len(m.cols))
 	for i, cell := range m.rows[rowID] {
-		style := lipgloss.NewStyle().Width(m.cols[i].Width).MaxWidth(m.cols[i].Width).Inline(true)
+		style := lipgloss.NewStyle().
+			Width(m.cols[i].Width).
+			MaxWidth(m.cols[i].Width)
+			// Inline(true)
 
 		var renderedCell string
-		// selected
-		if i == m.cursor.x && rowID == m.cursor.y {
-			//TODO: text inputのviewを呼び出してtextにsetする
-			if m.mode == INSERT {
-				renderedCell = m.styles.Selected.Render(style.Render(cell.View()))
-			} else {
-				renderedCell = m.styles.Selected.Render(style.Render(cell.Value()))
-			}
+		isSelected := i == m.cursor.x &&
+			rowID == m.cursor.y &&
+			m.mode != HEADER &&
+			m.mode != HEADER_INSERT
+		isInsertMode := m.mode == INSERT
+
+		var value string
+		if isInsertMode && isSelected {
+			value = cell.View()
+			// log.Debug("インサート", "test", value)
 		} else {
-			renderedCell = m.styles.Cell.Render(style.Render(cell.Value()))
+			value = cell.Value()
+			// log.Debug("", "test", value)
 		}
+
+		if isSelected {
+			renderedCell = m.styles.Selected.Render(style.Render(value))
+		} else {
+			renderedCell = m.styles.Cell.Render(style.Render(value))
+		}
+
 		s = append(s, renderedCell)
 	}
 
