@@ -267,10 +267,16 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 			case key.Matches(msg, m.KeyMap.Left):
 				m.MoveLeft(1)
 			case key.Matches(msg, m.KeyMap.AddRow):
-				m.AddRow()
+				if m.mode == HEADER {
+					return m, nil
+				}
+				m.Add()
 				m.switchMode(INSERT)
 			case key.Matches(msg, m.KeyMap.DelRow):
-				cmd := m.DelRow()
+				if m.mode == HEADER {
+					return m, nil
+				}
+				cmd := m.Del()
 				cmds = append(cmds, cmd)
 			case key.Matches(msg, m.KeyMap.PageUp):
 				m.MoveUp(m.viewport.Height)
@@ -287,11 +293,15 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 			case key.Matches(msg, m.KeyMap.GotoBottom):
 				m.GotoBottom()
 			case key.Matches(msg, m.KeyMap.InsertMode):
-				m.switchMode(INSERT)
+				if m.mode == HEADER {
+					m.switchMode(HEADER_INSERT)
+				} else {
+					m.switchMode(INSERT)
+				}
 			}
 			m.prevKey = msg.String()
 		}
-	case INSERT:
+	case INSERT, HEADER_INSERT:
 		switch msg := msg.(type) {
 		case WidthMsg:
 			m.UpdateWidth(msg)
@@ -300,11 +310,14 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 		case tea.KeyMsg:
 			switch {
 			case key.Matches(msg, m.KeyMap.NormalMode):
-				m.switchMode(NORMAL)
+				if m.mode == HEADER_INSERT {
+					m.switchMode(HEADER)
+				} else {
+					m.switchMode(NORMAL)
+
+				}
 			default:
-				newCell, cmd := m.rows[m.cursor.y][m.cursor.x].Update(msg)
-				m.rows[m.cursor.y][m.cursor.x] = newCell
-				m.UpdateViewport()
+				cmd := m.UpdateFocusedCell(msg)
 				cmds = append(cmds, cmd)
 			}
 			m.prevKey = msg.String()
@@ -312,6 +325,22 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 	}
 
 	return m, tea.Batch(cmds...)
+}
+
+func (m *TableModel) UpdateFocusedCell(msg tea.KeyMsg) tea.Cmd {
+	if m.mode == INSERT {
+		newCell, cmd := m.rows[m.cursor.y][m.cursor.x].Update(msg)
+		m.rows[m.cursor.y][m.cursor.x] = newCell
+		m.UpdateViewport()
+		return cmd
+
+	} else if m.mode == HEADER_INSERT {
+		newCell, cmd := m.cols[m.cursor.x].Title.Update(msg)
+		m.cols[m.cursor.x].Title = newCell
+		m.UpdateViewport()
+		return cmd
+	}
+	return nil
 }
 
 func (m *TableModel) switchMode(mode int) {
@@ -394,7 +423,7 @@ func (m *TableModel) SetRows(r []Row) {
 	m.rows = r
 }
 
-func (m *TableModel) AddRow() {
+func (m *TableModel) Add() {
 	if m.prevKey == "v" {
 		m.AddColumn()
 		return
@@ -408,9 +437,10 @@ func (m *TableModel) AddRow() {
 	m.MoveDown(1)
 }
 
-func (m *TableModel) DelRow() tea.Cmd {
+func (m *TableModel) Del() tea.Cmd {
 	if m.prevKey == "d" {
 		m.deleteRow(m.cursor.y)
+		m.SetHeight(len(m.rows))
 		m.UpdateViewport()
 		return clearPrevKeyCmd()
 	} else if m.prevKey == "v" {
@@ -475,11 +505,10 @@ func (m *TableModel) SetCursor(n int) {
 // MoveUp moves the selection up by any number of rows.
 // It can not go above the first row.
 func (m *TableModel) MoveUp(n int) {
-	m.cursor.y = clamp(m.cursor.y-n, 0, len(m.rows)-1)
-
 	if m.cursor.y == 0 {
 		m.switchMode(HEADER)
 	}
+	m.cursor.y = clamp(m.cursor.y-n, 0, len(m.rows)-1)
 
 	switch {
 	case m.start == 0:
@@ -566,7 +595,13 @@ func (m TableModel) headersView() string {
 		} else {
 			style = lipgloss.NewStyle().Width(col.Width).MaxWidth(col.Width).Inline(true)
 		}
-		renderedCell := style.Render(col.Title.Value())
+
+		var renderedCell string
+		if i == m.cursor.x && m.mode == HEADER_INSERT {
+			renderedCell = style.Render(col.Title.View())
+		} else {
+			renderedCell = style.Render(col.Title.Value())
+		}
 		s = append(s, m.styles.Header.Render(renderedCell))
 	}
 	return lipgloss.JoinHorizontal(lipgloss.Left, s...)
@@ -578,16 +613,22 @@ func (m *TableModel) renderRow(rowID int) string {
 		style := lipgloss.NewStyle().Width(m.cols[i].Width).MaxWidth(m.cols[i].Width).Inline(true)
 
 		var renderedCell string
-		// selected
-		if i == m.cursor.x && rowID == m.cursor.y && m.mode != HEADER {
-			if m.mode == INSERT {
-				renderedCell = m.styles.Selected.Render(style.Render(cell.View()))
-			} else {
-				renderedCell = m.styles.Selected.Render(style.Render(cell.Value()))
-			}
+		isSelected := i == m.cursor.x && rowID == m.cursor.y && m.mode != HEADER && m.mode != HEADER_INSERT
+		isInsertMode := m.mode == INSERT
+
+		var value string
+		if isInsertMode && isSelected {
+			value = cell.View()
 		} else {
-			renderedCell = m.styles.Cell.Render(style.Render(cell.Value()))
+			value = cell.Value()
 		}
+
+		if isSelected {
+			renderedCell = m.styles.Selected.Render(style.Render(value))
+		} else {
+			renderedCell = m.styles.Cell.Render(style.Render(value))
+		}
+
 		s = append(s, renderedCell)
 	}
 
