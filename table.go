@@ -163,7 +163,7 @@ type Option func(*TableModel)
 func New(opts ...Option) TableModel {
 	m := TableModel{
 		cursor:   Cursor{0, 0},
-		viewport: viewport.New(0, 20),
+		viewport: viewport.New(0, 10),
 
 		KeyMap: DefaultKeyMap(),
 		styles: DefaultStyles(),
@@ -203,6 +203,7 @@ func WithNaiveRows(rows []NaiveRow) Option {
 				m.rows[i][j] = NewCell(c)
 			}
 		}
+		m.SetHeight(len(rows))
 	}
 }
 
@@ -403,6 +404,7 @@ func (m *TableModel) AddRow() {
 		newRow[i] = NewCell("")
 	}
 	m.insertRow(m.cursor.y+1, newRow)
+	m.SetHeight(len(m.rows))
 	m.MoveDown(1)
 }
 
