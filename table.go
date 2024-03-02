@@ -24,6 +24,8 @@ type TableModel struct {
 	start    int
 	end      int
 	mode     int
+
+	register Register
 }
 
 type Cursor struct {
@@ -42,6 +44,8 @@ type Column struct {
 	Width int
 }
 
+type Register interface{}
+
 // KeyMap defines keybindings. It satisfies to the help.KeyMap interface, which
 // is used to render the menu.
 type KeyMap struct {
@@ -51,6 +55,8 @@ type KeyMap struct {
 	Left         key.Binding
 	AddRow       key.Binding
 	DelRow       key.Binding
+	Yank         key.Binding
+	Paste        key.Binding
 	PageUp       key.Binding
 	PageDown     key.Binding
 	HalfPageUp   key.Binding
@@ -88,6 +94,14 @@ func DefaultKeyMap() KeyMap {
 		DelRow: key.NewBinding(
 			key.WithKeys("d"),
 			key.WithHelp("d", "Add row"),
+		),
+		Yank: key.NewBinding(
+			key.WithKeys("y"),
+			key.WithHelp("y", "Copy"),
+		),
+		Paste: key.NewBinding(
+			key.WithKeys("p"),
+			key.WithHelp("p", "Paste"),
 		),
 		PageUp: key.NewBinding(
 			key.WithKeys("b", "pgup"),
@@ -270,7 +284,7 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 				if m.mode == HEADER {
 					return m, nil
 				}
-				m.Add()
+				m.AddEmpty()
 				m.switchMode(INSERT)
 			case key.Matches(msg, m.KeyMap.DelRow):
 				if m.mode == HEADER {
@@ -278,6 +292,12 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 				}
 				cmd := m.Del()
 				cmds = append(cmds, cmd)
+			case key.Matches(msg, m.KeyMap.Yank):
+				m.Copy()
+
+			case key.Matches(msg, m.KeyMap.Paste):
+				m.Paste()
+
 			case key.Matches(msg, m.KeyMap.PageUp):
 				m.MoveUp(m.viewport.Height)
 			case key.Matches(msg, m.KeyMap.PageDown):
@@ -333,7 +353,6 @@ func (m *TableModel) UpdateFocusedCell(msg tea.KeyMsg) tea.Cmd {
 		m.rows[m.cursor.y][m.cursor.x] = newCell
 		m.UpdateViewport()
 		return cmd
-
 	} else if m.mode == HEADER_INSERT {
 		newCell, cmd := m.cols[m.cursor.x].Title.Update(msg)
 		m.cols[m.cursor.x].Title = newCell
@@ -355,6 +374,27 @@ func (m *TableModel) switchMode(mode int) {
 
 func (m TableModel) UpdateWidth(msg WidthMsg) {
 	m.cols[m.cursor.x].Width = max(msg.width, m.cols[m.cursor.x].Width)
+}
+
+func (m *TableModel) Copy() {
+	//TODO
+	// Rowのコピーだけを考える。今のところ
+	var row Row
+	cells := make([]Cell, len(m.cols))
+	copy(cells, m.rows[m.cursor.y])
+	row = cells
+	m.register = row
+}
+
+func (m *TableModel) Paste() {
+	//TODO
+	// Rowのペーストだけを考える。今のところ
+	if m.register != nil {
+		m.insertRow(m.cursor.y+1, m.register.(Row))
+	}
+	m.SetHeight(len(m.rows))
+	m.MoveDown(1)
+	m.UpdateViewport()
 }
 
 // Focused returns the focus state of the table.
@@ -423,7 +463,7 @@ func (m *TableModel) SetRows(r []Row) {
 	m.rows = r
 }
 
-func (m *TableModel) Add() {
+func (m *TableModel) AddEmpty() {
 	if m.prevKey == "v" {
 		m.AddColumn()
 		return
