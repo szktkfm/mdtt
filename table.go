@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/log"
 )
 
 // TableModel defines a state for the table widget.
@@ -366,10 +367,10 @@ func (m *TableModel) switchMode(mode int) {
 	m.mode = mode
 	if mode == INSERT {
 		m.styles.Selected = lipgloss.NewStyle().Bold(true)
-		m.UpdateViewport()
 	} else {
 		m.SetStyles(DefaultStyles())
 	}
+	m.UpdateViewport()
 }
 
 func (m TableModel) UpdateWidth(msg WidthMsg) {
@@ -517,8 +518,8 @@ func (m *TableModel) SetWidth(w int) {
 
 // SetHeight sets the height of the viewport of the table.
 func (m *TableModel) SetHeight(h int) {
-	m.viewport.Height = h
-	m.UpdateViewport()
+	// m.viewport.Height = h
+	// m.UpdateViewport()
 }
 
 // Height returns the viewport height of the table.
@@ -650,7 +651,10 @@ func (m TableModel) headersView() string {
 func (m *TableModel) renderRow(rowID int) string {
 	var s = make([]string, 0, len(m.cols))
 	for i, cell := range m.rows[rowID] {
-		style := lipgloss.NewStyle().Width(m.cols[i].Width).MaxWidth(m.cols[i].Width).Inline(true)
+		style := lipgloss.NewStyle().
+			Width(m.cols[i].Width).
+			MaxWidth(m.cols[i].Width)
+			// Inline(true)
 
 		var renderedCell string
 		isSelected := i == m.cursor.x &&
@@ -662,8 +666,10 @@ func (m *TableModel) renderRow(rowID int) string {
 		var value string
 		if isInsertMode && isSelected {
 			value = cell.View()
+			// value = cell.Value()
 		} else {
 			value = cell.Value()
+			log.Debug("value", "value", value)
 		}
 
 		if isSelected {

@@ -1,6 +1,8 @@
 package mdtt
 
 import (
+	"strings"
+
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -25,6 +27,7 @@ func NewCell(value string) Cell {
 	ta := textarea.New()
 	ta.Placeholder = "Pikachu"
 	ta.ShowLineNumbers = false
+	ta.SetHeight(0)
 	ta.Focus()
 	ta.CharLimit = 156
 	ta.SetValue(value)
@@ -40,6 +43,11 @@ func (m Cell) Init() tea.Cmd {
 
 func (m Cell) Update(msg tea.Msg) (Cell, tea.Cmd) {
 	var cmd tea.Cmd
+
+	// h := m.textInput.LineInfo().Height
+	// fmt.Println(h)
+	h := strings.Count(m.textInput.Value(), "\n") + 1
+	m.textInput.SetHeight(h)
 
 	switch msg := msg.(type) {
 	// We handle errors just like any other message
@@ -61,7 +69,7 @@ func updateWidthCmd(width int) tea.Cmd {
 }
 
 func (m Cell) View() string {
-	return m.textInput.View() + "\n"
+	return m.textInput.View()
 }
 
 func (m Cell) Value() string {
