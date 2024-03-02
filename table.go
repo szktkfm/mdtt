@@ -653,7 +653,10 @@ func (m *TableModel) renderRow(rowID int) string {
 		style := lipgloss.NewStyle().Width(m.cols[i].Width).MaxWidth(m.cols[i].Width).Inline(true)
 
 		var renderedCell string
-		isSelected := i == m.cursor.x && rowID == m.cursor.y && m.mode != HEADER && m.mode != HEADER_INSERT
+		isSelected := i == m.cursor.x &&
+			rowID == m.cursor.y &&
+			m.mode != HEADER &&
+			m.mode != HEADER_INSERT
 		isInsertMode := m.mode == INSERT
 
 		var value string
