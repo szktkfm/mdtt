@@ -666,7 +666,6 @@ func (m *TableModel) renderRow(rowID int) string {
 		var value string
 		if isInsertMode && isSelected {
 			value = cell.View()
-			// value = cell.Value()
 		} else {
 			value = cell.Value()
 			log.Debug("value", "value", value)
