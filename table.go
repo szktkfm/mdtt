@@ -380,9 +380,9 @@ func (m *TableModel) Copy() {
 	//TODO
 	// Rowのコピーだけを考える。今のところ
 	var row Row
-	cells := make([]Cell, len(m.cols))
-	copy(cells, m.rows[m.cursor.y])
-	row = cells
+	for _, cell := range m.rows[m.cursor.y] {
+		row = append(row, NewCell(cell.Value()))
+	}
 	m.register = row
 }
 

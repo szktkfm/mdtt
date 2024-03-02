@@ -1,6 +1,7 @@
 package mdtt
 
 import (
+	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -16,20 +17,21 @@ type WidthMsg struct {
 }
 
 type Cell struct {
-	textInput textinput.Model
+	textInput textarea.Model
 	err       error
 }
 
 func NewCell(value string) Cell {
-	ti := textinput.New()
-	ti.Placeholder = "Pikachu"
-	ti.Focus()
-	ti.CharLimit = 156
-	ti.SetValue(value)
-	ti.Prompt = ""
-	ti.Cursor.Style = lipgloss.NewStyle().
+	ta := textarea.New()
+	ta.Placeholder = "Pikachu"
+	ta.ShowLineNumbers = false
+	ta.Focus()
+	ta.CharLimit = 156
+	ta.SetValue(value)
+	ta.Prompt = ""
+	ta.Cursor.Style = lipgloss.NewStyle().
 		Foreground(lipgloss.Color("205"))
-	return Cell{textInput: ti, err: nil}
+	return Cell{textInput: ta, err: nil}
 }
 
 func (m Cell) Init() tea.Cmd {
