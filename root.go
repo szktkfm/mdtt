@@ -17,13 +17,13 @@ var baseStyle = lipgloss.NewStyle().
 	BorderStyle(lipgloss.NormalBorder()).
 	BorderForeground(lipgloss.Color("240"))
 
-type model struct {
+type Model struct {
 	table TableModel
 }
 
-func (m model) Init() tea.Cmd { return nil }
+func (m Model) Init() tea.Cmd { return nil }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -36,11 +36,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m model) View() string {
+func (m Model) View() string {
 	return baseStyle.Render(m.table.View()) + "\n"
 }
 
-func NewRoot() model {
+func NewRoot() Model {
 	columns := []Column{
 		{Title: NewCell("Rank"), Width: 4},
 		{Title: NewCell("City"), Width: 20},
@@ -76,6 +76,6 @@ func NewRoot() model {
 	// 	Bold(false)
 	t.SetStyles(s)
 
-	m := model{t}
+	m := Model{t}
 	return m
 }
