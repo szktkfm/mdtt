@@ -7,7 +7,6 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/log"
 )
 
 // TableModel defines a state for the table widget.
@@ -287,6 +286,8 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 				}
 				m.AddEmpty()
 				m.switchMode(INSERT)
+				m.rows[m.cursor.y][m.cursor.x].Update(msg)
+
 			case key.Matches(msg, m.KeyMap.DelRow):
 				if m.mode == HEADER {
 					return m, nil
@@ -668,7 +669,6 @@ func (m *TableModel) renderRow(rowID int) string {
 			value = cell.View()
 		} else {
 			value = cell.Value()
-			log.Debug("value", "value", value)
 		}
 
 		if isSelected {
