@@ -2,11 +2,7 @@ package mdtt
 
 import (
 	"bytes"
-	"io"
-	"os"
 
-	"github.com/charmbracelet/log"
-	"github.com/muesli/termenv"
 	"github.com/yuin/goldmark"
 	east "github.com/yuin/goldmark-emoji/ast"
 	"github.com/yuin/goldmark/ast"
@@ -18,80 +14,95 @@ import (
 
 var highPriority = 100
 
-func parse(file string) Model {
-	f, _ := os.Open(file)
-	s, _ := io.ReadAll(f)
+// TableModelBuilder build TableModel from markdown
+type TableModelBuilder struct {
+	inTable bool
+	buf     *bytes.Buffer
+	// temprary storage of table rows
+	rows []string
+	// temprary storage of table columns
+	cols []string
+	// temprary storage of table alignments
+	alignment []string
+	tables    []table
+}
 
+type table struct {
+	rows      []string
+	cols      []string
+	alignment []string
+}
+
+func parse(s []byte) []TableModel {
 	md := goldmark.New(
 		goldmark.WithExtensions(extension.GFM),
 		goldmark.WithExtensions(extension.Table),
 	)
 
-	tr := NewRenderer(Options{})
+	builder := NewTableModelBuilder()
 
 	md.SetRenderer(
 		renderer.NewRenderer(
 			renderer.WithNodeRenderers(
-				util.Prioritized(tr, highPriority),
+				util.Prioritized(builder, highPriority),
 			),
 		),
 	)
 
-	// Convert markdown to HTML
-	var buf bytes.Buffer
-	md.Convert(s, &buf)
+	var _buf bytes.Buffer
+	md.Convert(s, &_buf)
 
-	// fmt.Println(string(s))
-	// log.Debug(buf.String())
-	log.Debug("rows", "rows", tr.rows)
-	log.Debug("cols", "cols", tr.cols)
+	return builder.build()
 
-	var rows []NaiveRow
-	for i := range len(tr.rows) / len(tr.cols) {
-		rows = append(rows, tr.rows[i*len(tr.cols):(i+1)*len(tr.cols)])
+}
+
+func (b *TableModelBuilder) build() []TableModel {
+
+	var models []TableModel
+	for _, t := range b.tables {
+		var rows []naiveRow
+		for i := range len(t.rows) / len(t.cols) {
+			rows = append(rows, t.rows[i*len(t.cols):(i+1)*len(t.cols)])
+		}
+
+		var cols []column
+		for i := range len(t.cols) {
+			var maxWidth int
+			for _, r := range rows {
+				maxWidth = max(len(r[i]), maxWidth)
+			}
+			maxWidth = max(maxWidth, len(t.cols[i]))
+			cols = append(cols, column{
+				title:     NewCell(t.cols[i]),
+				width:     maxWidth + 2,
+				alignment: t.alignment[i],
+			})
+		}
+
+		t := NewTableModel(
+			WithColumns(cols),
+			WithNaiveRows(rows),
+			WithFocused(true),
+			WithHeight(len(rows)+1),
+		)
+
+		style := defaultStyles()
+
+		t.SetStyles(style)
+		models = append(models, t)
 	}
+	return models
+}
 
-	var cols []Column
-	for i := range len(tr.cols) {
-		cols = append(cols, Column{Title: NewCell(tr.cols[i]), Width: 20})
+func NewTableModelBuilder() *TableModelBuilder {
+	var buf []byte
+	return &TableModelBuilder{
+		buf: bytes.NewBuffer(buf),
 	}
-
-	t := New(
-		WithColumns(cols),
-		WithNaiveRows(rows),
-		WithFocused(true),
-		// table.WithHeight(7),
-	)
-
-	style := DefaultStyles()
-
-	t.SetStyles(style)
-
-	return Model{t}
-}
-
-// Options is used to configure an ANSIRenderer.
-type Options struct {
-	BaseURL          string
-	WordWrap         int
-	PreserveNewLines bool
-	ColorProfile     termenv.Profile
-}
-
-// ModelBuilder build tea.Model from  markdown
-type ModelBuilder struct {
-	inTable bool
-	rows    []string
-	cols    []string
-}
-
-// NewRenderer returns a new ANSIRenderer with style and options set.
-func NewRenderer(options Options) *ModelBuilder {
-	return &ModelBuilder{}
 }
 
 // RegisterFuncs implements NodeRenderer.RegisterFuncs.
-func (r *ModelBuilder) RegisterFuncs(reg renderer.NodeRendererFuncRegisterer) {
+func (r *TableModelBuilder) RegisterFuncs(reg renderer.NodeRendererFuncRegisterer) {
 	// blocks
 	reg.Register(ast.KindDocument, r.renderNode)
 	reg.Register(ast.KindHeading, r.renderNode)
@@ -142,67 +153,44 @@ func (r *ModelBuilder) RegisterFuncs(reg renderer.NodeRendererFuncRegisterer) {
 	reg.Register(east.KindEmoji, r.renderNode)
 }
 
-func (r *ModelBuilder) renderNode(w util.BufWriter, source []byte, node ast.Node, entering bool) (ast.WalkStatus, error) {
-	// children get rendered by their parent
-	// if isChild(node) {
-	// 	return ast.WalkContinue, nil
-	// }
-
+func (tb *TableModelBuilder) renderNode(w util.BufWriter, source []byte, node ast.Node, entering bool) (ast.WalkStatus, error) {
 	if entering {
-		log.Debugf(">Start %v = %v", node.Kind().String(), string(node.Text(source)))
-		log.Debugf("\n")
-		log.Debugf("\n")
-
-		switch node.Kind() {
-
-		case ast.KindDocument:
-		}
-
 		if node.Kind() == astext.KindTable {
-			r.inTable = true
+			tb.inTable = true
 		}
 
-		if r.inTable {
-			if node.Kind() == astext.KindTableCell {
-				switch node.Parent().Kind() {
-				case astext.KindTableHeader:
-					r.cols = append(r.cols, string(node.Text(source)))
-				case astext.KindTableRow:
-					r.rows = append(r.rows, string(node.Text(source)))
-				}
-			}
+		if tb.inTable {
+			e := tb.NewElement(node, source)
+			e.Renderer(tb.buf)
 		}
 
 	} else {
-		log.Debugf("<End %v", node.Kind().String())
-		log.Debugf("\n")
-
 		if node.Kind() == astext.KindTable {
-			r.inTable = false
+			tb.tables = append(tb.tables, table{tb.rows, tb.cols, tb.alignment})
+			tb.rows = nil
+			tb.cols = nil
+			tb.alignment = nil
+			tb.inTable = false
 		}
 
-		switch node.Kind() {
-
-		case ast.KindDocument:
+		if tb.inTable {
+			switch node.Kind() {
+			case astext.KindTableCell:
+				switch node.Parent().Kind() {
+				case astext.KindTableHeader:
+					n := node.(*astext.TableCell)
+					tb.cols = append(tb.cols, tb.buf.String())
+					tb.alignment = append(tb.alignment, n.Alignment.String())
+					tb.buf.Reset()
+				case astext.KindTableRow:
+					tb.rows = append(tb.rows, tb.buf.String())
+					tb.buf.Reset()
+				}
+			default:
+				e := tb.NewElement(node, source)
+				e.Finisher(tb.buf)
+			}
 		}
-
 	}
-
 	return ast.WalkContinue, nil
-}
-
-func isChild(node ast.Node) bool {
-	if node.Parent() != nil && node.Parent().Kind() == ast.KindBlockquote {
-		// skip paragraph within blockquote to avoid reflowing text
-		return true
-	}
-	for n := node.Parent(); n != nil; n = n.Parent() {
-		// These types are already rendered by their parent
-		switch n.Kind() {
-		case ast.KindLink, ast.KindImage, ast.KindEmphasis, astext.KindStrikethrough, astext.KindTableCell:
-			return true
-		}
-	}
-
-	return false
 }

@@ -1,11 +1,15 @@
 package main
 
 import (
+	"io"
 	"os"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
+	"github.com/mattn/go-isatty"
+	"github.com/muesli/termenv"
 	"github.com/spf13/cobra"
 	"github.com/szktkfm/mdtt"
 )
@@ -16,8 +20,8 @@ var (
 	Date    = ""
 	BuiltBy = ""
 	rootCmd = &cobra.Command{
-		Use:     "gh dash",
-		Short:   "A gh extension that shows a configurable dashboard of pull requests and issues.",
+		Use:     "mdtt [file]",
+		Short:   "Markdown Table Editor with TUI",
 		Version: "",
 		Run: func(cmd *cobra.Command, args []string) {
 			debug, err := cmd.Flags().GetBool("debug")
@@ -30,14 +34,18 @@ var (
 				defer logger.Close()
 			}
 
-			// parse markdown
-			// create model
-
-			model := mdtt.NewRoot(args[0])
+			inplace, _ := cmd.Flags().GetBool("inplace")
+			if inplace && len(args) == 0 {
+				log.Fatal("no input files")
+			}
+			var model = createModel(args, inplace)
 
 			p := tea.NewProgram(
 				model,
 				tea.WithoutSignalHandler(),
+				tea.WithOutput(
+					termenv.NewOutput(os.Stderr),
+				),
 			)
 			if _, err := p.Run(); err != nil {
 				log.Fatal("Failed starting the TUI", err)
@@ -45,6 +53,35 @@ var (
 		},
 	}
 )
+
+func createModel(args []string, inplace bool) mdtt.Model {
+
+	var model mdtt.Model
+
+	if !isatty.IsTerminal(os.Stdin.Fd()) {
+
+		content, _ := io.ReadAll(os.Stdin)
+		model = mdtt.NewRoot(
+			mdtt.WithMarkdown(content),
+		)
+
+	} else if len(args) == 0 {
+
+		model = mdtt.NewRoot()
+
+	} else {
+		f, _ := os.Open(args[0])
+		defer f.Close()
+		content, _ := io.ReadAll(f)
+		model = mdtt.NewRoot(
+			mdtt.WithMarkdown(content),
+			mdtt.WithInplace(inplace),
+			mdtt.WithFilePath(args[0]),
+		)
+	}
+
+	return model
+}
 
 func Execute() {
 	err := rootCmd.Execute()
@@ -59,10 +96,11 @@ func init() {
 		false,
 		"passing this flag will allow writing debug output to debug.log",
 	)
-	rootCmd.Flags().Bool(
-		"p",
+	rootCmd.Flags().BoolP(
+		"inplace",
+		"i",
 		false,
-		"test parse",
+		"in-place update",
 	)
 	rootCmd.Flags().BoolP(
 		"help",
@@ -70,6 +108,7 @@ func init() {
 		false,
 		"help for gh-dash",
 	)
+	lipgloss.SetColorProfile(termenv.ANSI256)
 }
 
 func createLogger(debug bool) *os.File {

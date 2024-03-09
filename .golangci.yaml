@@ -10,3 +10,5 @@ linters:
     - ineffassign
     - staticcheck
     - unused
+run: 
+  go: '1.22'

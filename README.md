@@ -1,16 +1,24 @@
+
 ## Usage
 
-| Key binding      | Description        |
-|------------------|--------------------|
-| `Arrows`, `hjkl` | _Move_ cursor        |
-| `Enter`          | Enter directory    |
-| `Backspace`      | Exit directory     |
-| `Space`          | Toggle preview     |
-| `Esc`, `q`       | Exit with cd       |
-| `Ctrl+c`         | Exit without cd    |
-| `/`              | Fuzzy search       |
-| `dd`             | Delete file or dir |
-| `y`              | yank current dir   |
+| Key binding      | Description      |
+| ---------------- | ---------------- |
+| `Arrows`, `hjkl` | Move cursor      |
+| `Enter`   :100:  | Enter directory  |
+| `Backspace`      | Exit directory   |
+| `Space`          | Toggle preview   |
+| **Esc**, _q_     | Exit with cd     |
+| `y`              | yank current dir |
 
-The `EDITOR` or `WALK_EDITOR` environment variable used for opening files from
-the walk.
+first line
+
+
+## Usage2
+
+| TEETE        | COLUMN            |
+| ------------ | ----------------- |
+| `Space`      | Toggle preview    |
+| **Esc**, _q_ | Exit with cd      |
+| `y`          | yank current dira |
+
+second line

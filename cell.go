@@ -1,10 +1,8 @@
 package mdtt
 
 import (
-	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/mattn/go-runewidth"
 )
 
@@ -12,64 +10,49 @@ type (
 	errMsg error
 )
 
-type WidthMsg struct {
+type widthMsg struct {
 	width int
 }
 
-type Cell struct {
-	textInput textarea.Model
+type cell struct {
+	textInput textinput.Model
 	err       error
 }
 
-func NewCell(value string) Cell {
-	ta := textarea.New()
-	ta.Placeholder = "Pikachu"
-	ta.ShowLineNumbers = false
-	ta.SetHeight(2)
+func NewCell(value string) cell {
+	ta := textinput.New()
+	ta.Placeholder = ""
 	ta.Focus()
-	ta.CharLimit = 156
 	ta.SetValue(value)
 	ta.Prompt = ""
-	ta.Cursor.Style = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("205"))
-	return Cell{textInput: ta, err: nil}
+	ta.Cursor.Style = cellCursorStyle
+	return cell{textInput: ta, err: nil}
 }
 
-func (m Cell) Init() tea.Cmd {
-	return textinput.Blink
-}
-
-func (m Cell) Update(msg tea.Msg) (Cell, tea.Cmd) {
+func (m cell) update(msg tea.Msg) (cell, tea.Cmd) {
 	var cmd tea.Cmd
 
-	// h := m.textInput.LineInfo().Height
-	// fmt.Println(h)
-
 	switch msg := msg.(type) {
-	// We handle errors just like any other message
 	case errMsg:
 		m.err = msg
 		return m, nil
 	}
 
 	m.textInput, cmd = m.textInput.Update(msg)
-	// h := strings.Count(m.textInput.Value(), "\n") + 2
-	h := m.textInput.LineCount() + 1
-	m.textInput.SetHeight(h)
-	width := runewidth.StringWidth(m.textInput.Value())
+	width := runewidth.StringWidth(m.textInput.Value()) + 2
 	return m, tea.Batch(cmd, updateWidthCmd(width))
 }
 
 func updateWidthCmd(width int) tea.Cmd {
 	return func() tea.Msg {
-		return WidthMsg{width}
+		return widthMsg{width}
 	}
 }
 
-func (m Cell) View() string {
+func (m cell) view() string {
 	return m.textInput.View()
 }
 
-func (m Cell) Value() string {
+func (m cell) value() string {
 	return m.textInput.Value()
 }
