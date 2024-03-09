@@ -27,12 +27,12 @@ func parse(file string) Model {
 		goldmark.WithExtensions(extension.Table),
 	)
 
-	tr := NewRenderer(Options{})
+	builder := NewModelBuilder(Options{})
 
 	md.SetRenderer(
 		renderer.NewRenderer(
 			renderer.WithNodeRenderers(
-				util.Prioritized(tr, highPriority),
+				util.Prioritized(builder, highPriority),
 			),
 		),
 	)
@@ -43,31 +43,37 @@ func parse(file string) Model {
 
 	// fmt.Println(string(s))
 	// log.Debug(buf.String())
-	log.Debug("rows", "rows", tr.rows)
-	log.Debug("cols", "cols", tr.cols)
+	log.Debug("rows", "rows", builder.rows)
+	log.Debug("cols", "cols", builder.cols)
 
+	// table.WithHeight(7),
+	m := builder.build()
+
+	return m
+}
+
+func (b *ModelBuilder) build() Model {
 	var rows []NaiveRow
-	for i := range len(tr.rows) / len(tr.cols) {
-		rows = append(rows, tr.rows[i*len(tr.cols):(i+1)*len(tr.cols)])
+	for i := range len(b.rows) / len(b.cols) {
+		rows = append(rows, b.rows[i*len(b.cols):(i+1)*len(b.cols)])
 	}
 
 	var cols []Column
-	for i := range len(tr.cols) {
-		cols = append(cols, Column{Title: NewCell(tr.cols[i]), Width: 20})
+	for i := range len(b.cols) {
+		cols = append(cols, Column{Title: NewCell(b.cols[i]), Width: 20})
 	}
 
 	t := New(
 		WithColumns(cols),
 		WithNaiveRows(rows),
 		WithFocused(true),
-		// table.WithHeight(7),
 	)
 
 	style := DefaultStyles()
 
 	t.SetStyles(style)
-
-	return Model{t}
+	m := Model{t}
+	return m
 }
 
 // Options is used to configure an ANSIRenderer.
@@ -85,8 +91,8 @@ type ModelBuilder struct {
 	cols    []string
 }
 
-// NewRenderer returns a new ANSIRenderer with style and options set.
-func NewRenderer(options Options) *ModelBuilder {
+// NewModelBuilder returns a new ANSIRenderer with style and options set.
+func NewModelBuilder(options Options) *ModelBuilder {
 	return &ModelBuilder{}
 }
 
@@ -153,10 +159,7 @@ func (r *ModelBuilder) renderNode(w util.BufWriter, source []byte, node ast.Node
 		log.Debugf("\n")
 		log.Debugf("\n")
 
-		switch node.Kind() {
-
-		case ast.KindDocument:
-		}
+		// TODO: inline系の処理を追加する
 
 		if node.Kind() == astext.KindTable {
 			r.inTable = true
@@ -180,12 +183,6 @@ func (r *ModelBuilder) renderNode(w util.BufWriter, source []byte, node ast.Node
 		if node.Kind() == astext.KindTable {
 			r.inTable = false
 		}
-
-		switch node.Kind() {
-
-		case ast.KindDocument:
-		}
-
 	}
 
 	return ast.WalkContinue, nil
