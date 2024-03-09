@@ -33,7 +33,7 @@ var (
 			// parse markdown
 			// create model
 
-			model := mdtt.NewRoot()
+			model := mdtt.NewRoot(args[0])
 
 			p := tea.NewProgram(
 				model,
