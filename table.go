@@ -1,12 +1,15 @@
 package mdtt
 
 import (
+	"os"
 	"time"
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+
+	"github.com/muesli/termenv"
 )
 
 // TableModel defines a state for the table widget.
@@ -65,6 +68,11 @@ type KeyMap struct {
 	GotoBottom   key.Binding
 	InsertMode   key.Binding
 	NormalMode   key.Binding
+}
+
+func init() {
+	// DefaultKeyMap = DefaultKeyMap()
+	termenv.SetDefaultOutput(termenv.NewOutput(os.Stderr))
 }
 
 // DefaultKeyMap returns a default set of keybindings.
