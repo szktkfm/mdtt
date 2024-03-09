@@ -19,6 +19,30 @@ var (
 		Use:     "gh dash",
 		Short:   "A gh extension that shows a configurable dashboard of pull requests and issues.",
 		Version: "",
+		Run: func(cmd *cobra.Command, args []string) {
+			debug, err := cmd.Flags().GetBool("debug")
+			if err != nil {
+				log.Fatal("Cannot parse debug flag", err)
+			}
+
+			logger := createLogger(debug)
+			if logger != nil {
+				defer logger.Close()
+			}
+
+			// parse markdown
+			// create model
+
+			model := mdtt.NewRoot()
+
+			p := tea.NewProgram(
+				model,
+				tea.WithoutSignalHandler(),
+			)
+			if _, err := p.Run(); err != nil {
+				log.Fatal("Failed starting the TUI", err)
+			}
+		},
 	}
 )
 
@@ -30,50 +54,26 @@ func Execute() {
 }
 
 func init() {
-
 	rootCmd.Flags().Bool(
 		"debug",
 		false,
 		"passing this flag will allow writing debug output to debug.log",
 	)
-
+	rootCmd.Flags().Bool(
+		"p",
+		false,
+		"test parse",
+	)
 	rootCmd.Flags().BoolP(
 		"help",
 		"h",
 		false,
 		"help for gh-dash",
 	)
-
-	rootCmd.Run = func(_ *cobra.Command, _ []string) {
-		debug, err := rootCmd.Flags().GetBool("debug")
-		if err != nil {
-			log.Fatal("Cannot parse debug flag", err)
-		}
-
-		model, logger := newFunction(debug)
-		if logger != nil {
-			defer logger.Close()
-		}
-
-		p := tea.NewProgram(
-			model,
-			tea.WithoutSignalHandler(),
-		)
-		if _, err := p.Run(); err != nil {
-			log.Fatal("Failed starting the TUI", err)
-		}
-	}
 }
 
-func main() {
-	Execute()
-}
-
-func newFunction(debug bool) (mdtt.Model, *os.File) {
-	var loggerFile *os.File
-
+func createLogger(debug bool) *os.File {
 	if debug {
-		var fileErr error
 		newConfigFile, fileErr := os.OpenFile("debug.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 		if fileErr == nil {
 			log.SetOutput(newConfigFile)
@@ -82,11 +82,14 @@ func newFunction(debug bool) (mdtt.Model, *os.File) {
 			log.SetLevel(log.DebugLevel)
 			log.Debug("Logging to debug.log")
 		} else {
-			loggerFile, _ = tea.LogToFile("debug.log", "debug")
 			log.Print("Failed setting up logging", fileErr)
 		}
+		return newConfigFile
 	}
 
-	return mdtt.NewRoot(), loggerFile
+	return nil
+}
 
+func main() {
+	Execute()
 }
