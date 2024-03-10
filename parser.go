@@ -87,13 +87,17 @@ type Options struct {
 // ModelBuilder build tea.Model from  markdown
 type ModelBuilder struct {
 	inTable bool
+	buf     *bytes.Buffer
 	rows    []string
 	cols    []string
 }
 
 // NewModelBuilder returns a new ANSIRenderer with style and options set.
 func NewModelBuilder(options Options) *ModelBuilder {
-	return &ModelBuilder{}
+	var buf []byte
+	return &ModelBuilder{
+		buf: bytes.NewBuffer(buf),
+	}
 }
 
 // RegisterFuncs implements NodeRenderer.RegisterFuncs.
@@ -149,16 +153,8 @@ func (r *ModelBuilder) RegisterFuncs(reg renderer.NodeRendererFuncRegisterer) {
 }
 
 func (r *ModelBuilder) renderNode(w util.BufWriter, source []byte, node ast.Node, entering bool) (ast.WalkStatus, error) {
-	// children get rendered by their parent
-	// if isChild(node) {
-	// 	return ast.WalkContinue, nil
-	// }
-
 	if entering {
 		log.Debugf(">Start %v = %v", node.Kind().String(), string(node.Text(source)))
-		log.Debugf("\n")
-		log.Debugf("\n")
-
 		// TODO: inline系の処理を追加する
 
 		if node.Kind() == astext.KindTable {
@@ -166,25 +162,34 @@ func (r *ModelBuilder) renderNode(w util.BufWriter, source []byte, node ast.Node
 		}
 
 		if r.inTable {
-			if node.Kind() == astext.KindTableCell {
-				switch node.Parent().Kind() {
-				case astext.KindTableHeader:
-					r.cols = append(r.cols, string(node.Text(source)))
-				case astext.KindTableRow:
-					r.rows = append(r.rows, string(node.Text(source)))
-				}
-			}
+			e := r.NewElement(node, source)
+			e.Renderer(r.buf)
 		}
 
 	} else {
 		log.Debugf("<End %v", node.Kind().String())
-		log.Debugf("\n")
 
 		if node.Kind() == astext.KindTable {
 			r.inTable = false
 		}
-	}
 
+		if r.inTable {
+			switch node.Kind() {
+			case astext.KindTableCell:
+				switch node.Parent().Kind() {
+				case astext.KindTableHeader:
+					r.cols = append(r.cols, r.buf.String())
+					r.buf.Reset()
+				case astext.KindTableRow:
+					r.rows = append(r.rows, r.buf.String())
+					r.buf.Reset()
+				}
+			default:
+				e := r.NewElement(node, source)
+				e.Finisher(r.buf)
+			}
+		}
+	}
 	return ast.WalkContinue, nil
 }
 

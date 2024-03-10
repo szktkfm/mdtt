@@ -1,83 +1,31 @@
 package mdtt
 
 import (
-	"fmt"
+	"bytes"
 
-	east "github.com/yuin/goldmark-emoji/ast"
 	"github.com/yuin/goldmark/ast"
 	astext "github.com/yuin/goldmark/extension/ast"
 )
 
 type Element struct {
 	Entering string
-	Exiting  string
-	Renderer func()
-	Finisher func()
+	Renderer func(b *bytes.Buffer)
+	Finisher func(b *bytes.Buffer)
 }
 
 // NewElement returns the appropriate render Element for a given node.
 func (tr *ModelBuilder) NewElement(node ast.Node, source []byte) Element {
-	// ctx := tr.context
-	// fmt.Print(strings.Repeat("  ", ctx.blockStack.Len()), node.Type(), node.Kind())
-	// defer fmt.Println()
 
 	switch node.Kind() {
-	// // Document
-	// case ast.KindDocument:
-	// // Heading
-	// case ast.KindHeading:
-	// // Paragraph
-	// case ast.KindParagraph:
-	// // Blockquote
-	// case ast.KindBlockquote:
-	// // Lists
-	// case ast.KindList:
-
-	// case ast.KindListItem:
-	// // Text Elements
-	// case ast.KindText:
-
 	// case ast.KindEmphasis:
+	// 	return Element{}
 
-	// case astext.KindStrikethrough:
-	case ast.KindThematicBreak:
-		// return Element{
-		// 	Entering: "",
-		// 	Exiting:  "",
-		// 	Renderer: &BaseElement{
-		// 		Style: ctx.options.Styles.HorizontalRule,
-		// 	},
-		// }
+	// case ast.KindLink:
+	// 	return Element{}
 
-	// Links
-	case ast.KindLink:
-		//TODO
-		// n := node.(*ast.Link)
-		// return Element{
-		// 	Renderer: &LinkElement{
-		// 		Text:    textFromChildren(node, source),
-		// 		BaseURL: ctx.options.BaseURL,
-		// 		URL:     string(n.Destination),
-		// 	},
-		// }
+	// case ast.KindAutoLink:
+	// 	return Element{}
 
-	case ast.KindAutoLink:
-		// n := node.(*ast.AutoLink)
-		// u := string(n.URL(source))
-		// label := string(n.Label(source))
-		// if n.AutoLinkType == ast.AutoLinkEmail && !strings.HasPrefix(strings.ToLower(u), "mailto:") {
-		// 	u = "mailto:" + u
-		// }
-
-		// return Element{
-		// 	Renderer: &LinkElement{
-		// 		Text:    label,
-		// 		BaseURL: ctx.options.BaseURL,
-		// 		URL:     u,
-		// 	},
-		// }
-
-	// Images
 	case ast.KindImage:
 		// n := node.(*ast.Image)
 		// text := string(n.Text(source))
@@ -88,96 +36,67 @@ func (tr *ModelBuilder) NewElement(node ast.Node, source []byte) Element {
 		// 		URL:     string(n.Destination),
 		// 	},
 		// }
+		return Element{}
 
 	case ast.KindCodeSpan:
-		// // n := node.(*ast.CodeSpan)
-		// e := &BlockElement{
-		// 	Block: &bytes.Buffer{},
-		// 	Style: cascadeStyle(ctx.blockStack.Current().Style, ctx.options.Styles.Code, false),
-		// }
-		// return Element{
-		// 	Renderer: e,
-		// 	Finisher: e,
-		// }
-
-	// Tables
-	case astext.KindTable:
-		// te := &TableElement{}
-		// return Element{
-		// 	Entering: "\n",
-		// 	Renderer: te,
-		// 	Finisher: te,
-		// }
+		// n := node.(*ast.CodeSpan)
+		return Element{
+			Renderer: func(b *bytes.Buffer) {
+				b.WriteString("`")
+			},
+			Finisher: func(b *bytes.Buffer) {
+				b.WriteString("`")
+			},
+		}
 
 	case astext.KindTableCell:
-		// s := ""
-		// n := node.FirstChild()
-		// for n != nil {
-		// 	switch t := n.(type) {
-		// 	case *ast.AutoLink:
-		// 		s += string(t.Label(source))
-		// 	default:
-		// 		s += string(n.Text(source))
-		// 	}
+		return Element{
+			Renderer: func(b *bytes.Buffer) {
+			},
+			Finisher: func(b *bytes.Buffer) {
+			},
+		}
 
-		// 	n = n.NextSibling()
-		// }
-
-		// return Element{
-		// 	Renderer: &TableCellElement{
-		// 		Text: s,
-		// 		Head: node.Parent().Kind() == astext.KindTableHeader,
-		// 	},
-		// }
-
-	case astext.KindTableHeader:
-		// return Element{
-		// 	Finisher: &TableHeadElement{},
-		// }
 	case astext.KindTableRow:
-		// return Element{
-		// 	Finisher: &TableRowElement{},
-		// }
+		return Element{
+			Renderer: func(b *bytes.Buffer) {
+			},
+			Finisher: func(b *bytes.Buffer) {
+			},
+		}
 
-	// HTML Elements
-	case ast.KindHTMLBlock:
-	// 	n := node.(*ast.HTMLBlock)
-	// 	return Element{
-	// 		Renderer: &BaseElement{
-	// 			Token: ctx.SanitizeHTML(string(n.Text(source)), true),
-	// 			Style: ctx.options.Styles.HTMLBlock.StylePrimitive,
-	// 		},
-	// 	}
-	// case ast.KindRawHTML:
-	// 	n := node.(*ast.RawHTML)
-	// 	return Element{
-	// 		Renderer: &BaseElement{
-	// 			Token: ctx.SanitizeHTML(string(n.Text(source)), true),
-	// 			Style: ctx.options.Styles.HTMLSpan.StylePrimitive,
-	// 		},
-	// 	}
+	case ast.KindText:
+		// n := node.(*ast.CodeSpan)
+		return Element{
+			Renderer: func(b *bytes.Buffer) {
+				b.WriteString(string(node.Text(source)))
+			},
+			Finisher: func(b *bytes.Buffer) {
+				b.WriteString("")
+			},
+		}
 
-	// Definition Lists
+		//
+	// case astext.KindTaskCheckBox:
+	// case ast.KindTextBlock:
 
-	// Handled by parents
-	case astext.KindTaskCheckBox:
-		// // handled by KindListItem
-		// return Element{}
-	case ast.KindTextBlock:
-		// return Element{}
-
-	case east.KindEmoji:
-		// n := node.(*east.Emoji)
-		// return Element{
-		// 	Renderer: &BaseElement{
-		// 		Token: string(n.Value.Unicode),
-		// 	},
-		// }
+	// case east.KindEmoji:
+	// n := node.(*east.Emoji)
+	// return Element{
+	// 	Renderer: &BaseElement{
+	// 		Token: string(n.Value.Unicode),
+	// 	},
+	// }
+	// return Element{}
 
 	// Unknown case
 	default:
-		fmt.Println("Warning: unhandled element", node.Kind().String())
-		return Element{}
+		return Element{
+			Renderer: func(b *bytes.Buffer) {
+			},
+			Finisher: func(b *bytes.Buffer) {
+			},
+		}
 	}
-	return Element{}
+	// return Element{}
 }
