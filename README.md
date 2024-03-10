@@ -4,12 +4,13 @@
 | Key binding      | Description        |
 |------------------|--------------------|
 | `Arrows`, `hjkl` | Move cursor        |
-| `Enter`          | Enter directory    |
+| `Enter`   :100:       | Enter directory    |
 | `Backspace`      | Exit directory     |
 | `Space`          | Toggle preview     |
-| `Esc`, _q_       | Exit with cd       |
+| **Esc**, _q_       | Exit with cd       |
 | `Ctrl+c`         | Exit without cd    |
-| `/`              | Fuzzy search       |
+| `/`              hdidfj| Fuzzy search       |
+|djdfjfj`              hdidfj| Fuzzy search       |
 | `dd`             | Delete file or dir |
 | `y`              | yank current dir   |
 

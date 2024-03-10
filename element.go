@@ -3,6 +3,7 @@ package mdtt
 import (
 	"bytes"
 
+	east "github.com/yuin/goldmark-emoji/ast"
 	"github.com/yuin/goldmark/ast"
 	astext "github.com/yuin/goldmark/extension/ast"
 )
@@ -49,6 +50,26 @@ func (tr *ModelBuilder) NewElement(node ast.Node, source []byte) Element {
 			},
 		}
 
+	case ast.KindEmphasis:
+		// n := node.(*ast.CodeSpan)
+		n := node.(*ast.Emphasis)
+		return Element{
+			Renderer: func(b *bytes.Buffer) {
+				if n.Level == 2 {
+					b.WriteString("**")
+					return
+				}
+				b.WriteString("_")
+			},
+			Finisher: func(b *bytes.Buffer) {
+				if n.Level == 2 {
+					b.WriteString("**")
+					return
+				}
+				b.WriteString("_")
+			},
+		}
+
 	case astext.KindTableCell:
 		return Element{
 			Renderer: func(b *bytes.Buffer) {
@@ -80,8 +101,17 @@ func (tr *ModelBuilder) NewElement(node ast.Node, source []byte) Element {
 	// case astext.KindTaskCheckBox:
 	// case ast.KindTextBlock:
 
-	// case east.KindEmoji:
-	// n := node.(*east.Emoji)
+	case east.KindEmoji:
+		n := node.(*east.Emoji)
+		return Element{
+			Renderer: func(b *bytes.Buffer) {
+				b.WriteString(string(n.Value.Unicode))
+			},
+			Finisher: func(b *bytes.Buffer) {
+				b.WriteString("")
+			},
+		}
+
 	// return Element{
 	// 	Renderer: &BaseElement{
 	// 		Token: string(n.Value.Unicode),

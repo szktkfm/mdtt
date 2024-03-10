@@ -20,6 +20,7 @@ var highPriority = 100
 
 func parse(file string) Model {
 	f, _ := os.Open(file)
+	defer f.Close()
 	s, _ := io.ReadAll(f)
 
 	md := goldmark.New(
@@ -155,7 +156,6 @@ func (r *ModelBuilder) RegisterFuncs(reg renderer.NodeRendererFuncRegisterer) {
 func (r *ModelBuilder) renderNode(w util.BufWriter, source []byte, node ast.Node, entering bool) (ast.WalkStatus, error) {
 	if entering {
 		log.Debugf(">Start %v = %v", node.Kind().String(), string(node.Text(source)))
-		// TODO: inline系の処理を追加する
 
 		if node.Kind() == astext.KindTable {
 			r.inTable = true

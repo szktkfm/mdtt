@@ -503,8 +503,8 @@ func (m *TableModel) Del() tea.Cmd {
 
 func (m *TableModel) AddColumn() {
 	var rows []Row
-	cell := NewCell("")
 	for i := range m.rows {
+		cell := NewCell("")
 		rows = append(rows, insertCell(m.rows[i], m.cursor.x+1, cell))
 	}
 	m.SetRows(rows)
