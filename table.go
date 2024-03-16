@@ -1,15 +1,12 @@
 package mdtt
 
 import (
-	"os"
 	"time"
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-
-	"github.com/muesli/termenv"
 )
 
 // TableModel defines a state for the table widget.
@@ -72,7 +69,8 @@ type KeyMap struct {
 
 func init() {
 	// DefaultKeyMap = DefaultKeyMap()
-	termenv.SetDefaultOutput(termenv.NewOutput(os.Stderr))
+	//TODO: stderrにすると、起動直後にo/iを連打したときに固まる。
+	// termenv.SetDefaultOutput(termenv.NewOutput(os.Stderr))
 }
 
 // DefaultKeyMap returns a default set of keybindings.
@@ -294,7 +292,7 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 				}
 				m.AddEmpty()
 				m.switchMode(INSERT)
-				m.rows[m.cursor.y][m.cursor.x].Update(msg)
+				// m.rows[m.cursor.y][m.cursor.x].Update(msg)
 
 			case key.Matches(msg, m.KeyMap.DelRow):
 				if m.mode == HEADER {

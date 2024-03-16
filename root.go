@@ -6,6 +6,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/log"
 )
 
 // Enum of Mode
@@ -30,6 +31,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		log.Debug("msg", "msg", msg)
 		switch msg.String() {
 		case "q":
 			print(m.table)
@@ -74,43 +76,27 @@ func (m Model) View() string {
 }
 
 func NewRoot(file string) Model {
-	m := parse(file)
+	if file == "" {
+		columns := []Column{
+			{Title: NewCell(""), Width: 4},
+			{Title: NewCell(""), Width: 20},
+		}
 
-	// columns := []Column{
-	// 	{Title: NewCell("Rank"), Width: 4},
-	// 	{Title: NewCell("City"), Width: 20},
-	// 	{Title: NewCell("Country"), Width: 10},
-	// 	{Title: NewCell("Population"), Width: 20},
-	// }
+		rows := []NaiveRow{
+			{"", ""},
+		}
 
-	// rows := []NaiveRow{
-	// 	{"1", "Tokyo", "Japan", "37,274,000"},
-	// 	{"2", "Delhi", "India", "32,065,760"},
-	// 	{"3", "Shanghai", "China", "28,516,904"},
-	// 	{"4", "Dhaka", "Bangladesh", "22,478,116"},
-	// 	{"5", "São Paulo", "Brazil", "22,429,800"},
-	// 	{"6", "Mexico City", "Mexico", "22,085,140"},
-	// }
+		t := New(
+			WithColumns(columns),
+			WithNaiveRows(rows),
+			WithFocused(true),
+			// table.WithHeight(7),
+		)
 
-	// t := New(
-	// 	WithColumns(columns),
-	// 	WithNaiveRows(rows),
-	// 	WithFocused(true),
-	// 	// table.WithHeight(7),
-	// )
+		s := DefaultStyles()
+		t.SetStyles(s)
+		return Model{t}
+	}
 
-	// s := DefaultStyles()
-	// // s.Header = s.Header.
-	// // 	BorderStyle(lipgloss.NormalBorder()).
-	// // 	BorderForeground(lipgloss.Color("240")).
-	// // 	BorderBottom(true).
-	// // 	Bold(false)
-	// // s.Selected = s.Selected.
-	// // 	Foreground(lipgloss.Color("16")).
-	// // 	Background(lipgloss.Color("111")).
-	// // 	Bold(false)
-	// t.SetStyles(s)
-
-	// m := Model{t}
-	return m
+	return parse(file)
 }
