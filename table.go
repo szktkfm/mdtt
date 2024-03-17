@@ -53,8 +53,8 @@ type KeyMap struct {
 	LineDown     key.Binding
 	Right        key.Binding
 	Left         key.Binding
-	AddRow       key.Binding
-	DelRow       key.Binding
+	AddRowCol    key.Binding
+	DelRowCol    key.Binding
 	Yank         key.Binding
 	Paste        key.Binding
 	PageUp       key.Binding
@@ -87,11 +87,11 @@ func DefaultKeyMap() KeyMap {
 			key.WithKeys("left", "h"),
 			key.WithHelp("←/h", "left"),
 		),
-		AddRow: key.NewBinding(
+		AddRowCol: key.NewBinding(
 			key.WithKeys("o"),
 			key.WithHelp("o", "Add row"),
 		),
-		DelRow: key.NewBinding(
+		DelRowCol: key.NewBinding(
 			key.WithKeys("d"),
 			key.WithHelp("d", "Add row"),
 		),
@@ -280,7 +280,7 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 				m.MoveRight(1)
 			case key.Matches(msg, m.KeyMap.Left):
 				m.MoveLeft(1)
-			case key.Matches(msg, m.KeyMap.AddRow):
+			case key.Matches(msg, m.KeyMap.AddRowCol):
 				if m.mode == HEADER {
 					return m, nil
 				}
@@ -288,7 +288,7 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 				m.switchMode(INSERT)
 				// m.rows[m.cursor.y][m.cursor.x].Update(msg)
 
-			case key.Matches(msg, m.KeyMap.DelRow):
+			case key.Matches(msg, m.KeyMap.DelRowCol):
 				if m.mode == HEADER {
 					return m, nil
 				}
@@ -507,7 +507,7 @@ func (m *TableModel) AddColumn() {
 	}
 	m.SetRows(rows)
 
-	newCol := insertCol(m.cols, m.cursor.x+1, Column{Title: NewCell(""), Width: 10})
+	newCol := insertCol(m.cols, m.cursor.x+1, Column{Title: NewCell(""), Width: 4})
 	m.SetColumns(newCol)
 	m.MoveRight(1)
 }
@@ -614,24 +614,6 @@ func (m *TableModel) GotoTop() {
 func (m *TableModel) GotoBottom() {
 	m.MoveDown(len(m.rows))
 }
-
-//TODO:
-
-// FromValues create the table rows from a simple string. It uses `\n` by
-// default for getting all the rows and the given separator for the fields on
-// each row.
-// func (m *TableModel) FromValues(value, separator string) {
-// 	rows := []Row{}
-// 	for _, line := range strings.Split(value, "\n") {
-// 		r := Row{}
-// 		for _, field := range strings.Split(line, separator) {
-// 			r = append(r, field)
-// 		}
-// 		rows = append(rows, r)
-// 	}
-
-// 	m.SetRows(rows)
-// }
 
 func (m TableModel) headersView() string {
 	// selectしたheaderをstyleをinheritしてview
