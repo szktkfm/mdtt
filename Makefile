@@ -8,6 +8,9 @@ build:
 install:
 	go install ./cmd/mdtt
 
+lint:
+	golangci-lint run
+
 .PHONY: test
 test:
 	go test ./...
