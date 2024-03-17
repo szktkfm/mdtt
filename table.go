@@ -67,12 +67,6 @@ type KeyMap struct {
 	NormalMode   key.Binding
 }
 
-func init() {
-	// DefaultKeyMap = DefaultKeyMap()
-	//TODO: stderrにすると、起動直後にo/iを連打したときに固まる。
-	// termenv.SetDefaultOutput(termenv.NewOutput(os.Stderr))
-}
-
 // DefaultKeyMap returns a default set of keybindings.
 func DefaultKeyMap() KeyMap {
 	const spacebar = " "
@@ -183,7 +177,7 @@ type Option func(*TableModel)
 func New(opts ...Option) TableModel {
 	m := TableModel{
 		cursor:   Cursor{0, 0},
-		viewport: viewport.New(0, 10),
+		viewport: viewport.New(0, 0),
 
 		KeyMap: DefaultKeyMap(),
 		styles: DefaultStyles(),
@@ -399,8 +393,14 @@ func (m *TableModel) Paste() {
 	// Rowのペーストだけを考える。今のところ
 	if m.register != nil {
 		m.insertRow(m.cursor.y+1, m.register.(Row))
+
+		var row Row
+		for _, cell := range m.register.(Row) {
+			row = append(row, NewCell(cell.Value()))
+		}
+		m.register = row
 	}
-	m.SetHeight(len(m.rows))
+	m.SetHeight(len(m.rows) + 1)
 	m.MoveDown(1)
 	m.UpdateViewport()
 }
@@ -525,8 +525,8 @@ func (m *TableModel) SetWidth(w int) {
 
 // SetHeight sets the height of the viewport of the table.
 func (m *TableModel) SetHeight(h int) {
-	// m.viewport.Height = h
-	// m.UpdateViewport()
+	m.viewport.Height = h
+	m.UpdateViewport()
 }
 
 // Height returns the viewport height of the table.

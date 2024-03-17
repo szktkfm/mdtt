@@ -81,7 +81,7 @@ func init() {
 		false,
 		"help for gh-dash",
 	)
-	lipgloss.SetColorProfile(1)
+	lipgloss.SetColorProfile(termenv.ANSI256)
 }
 
 func createLogger(debug bool) *os.File {

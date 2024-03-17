@@ -42,8 +42,6 @@ func parse(file string) Model {
 	var buf bytes.Buffer
 	md.Convert(s, &buf)
 
-	// fmt.Println(string(s))
-	// log.Debug(buf.String())
 	log.Debug("rows", "rows", builder.rows)
 	log.Debug("cols", "cols", builder.cols)
 
@@ -68,6 +66,7 @@ func (b *ModelBuilder) build() Model {
 		WithColumns(cols),
 		WithNaiveRows(rows),
 		WithFocused(true),
+		WithHeight(len(rows)+1),
 	)
 
 	style := DefaultStyles()

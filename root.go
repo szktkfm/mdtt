@@ -79,7 +79,7 @@ func NewRoot(file string) Model {
 	if file == "" {
 		columns := []Column{
 			{Title: NewCell(""), Width: 4},
-			{Title: NewCell(""), Width: 20},
+			{Title: NewCell(""), Width: 4},
 		}
 
 		rows := []NaiveRow{
@@ -90,7 +90,7 @@ func NewRoot(file string) Model {
 			WithColumns(columns),
 			WithNaiveRows(rows),
 			WithFocused(true),
-			// table.WithHeight(7),
+			WithHeight(len(rows)+1),
 		)
 
 		s := DefaultStyles()
