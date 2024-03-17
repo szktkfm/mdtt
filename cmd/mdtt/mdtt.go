@@ -5,7 +5,9 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
+	"github.com/muesli/termenv"
 	"github.com/spf13/cobra"
 	"github.com/szktkfm/mdtt"
 )
@@ -44,6 +46,9 @@ var (
 			p := tea.NewProgram(
 				model,
 				tea.WithoutSignalHandler(),
+				tea.WithOutput(
+					termenv.NewOutput(os.Stderr),
+				),
 			)
 			if _, err := p.Run(); err != nil {
 				log.Fatal("Failed starting the TUI", err)
@@ -76,6 +81,7 @@ func init() {
 		false,
 		"help for gh-dash",
 	)
+	lipgloss.SetColorProfile(1)
 }
 
 func createLogger(debug bool) *os.File {
