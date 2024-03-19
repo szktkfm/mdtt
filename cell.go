@@ -1,7 +1,6 @@
 package mdtt
 
 import (
-	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -17,17 +16,17 @@ type WidthMsg struct {
 }
 
 type Cell struct {
-	textInput textarea.Model
+	textInput textinput.Model
 	err       error
 }
 
 func NewCell(value string) Cell {
-	ta := textarea.New()
-	ta.Placeholder = "Pikachu"
-	ta.ShowLineNumbers = false
-	ta.SetHeight(2)
+	ta := textinput.New()
+	ta.Placeholder = ""
+	// ta.ShowLineNumbers = false
+	// ta.SetHeight(2)
 	ta.Focus()
-	ta.CharLimit = 156
+	// ta.CharLimit = 156
 	ta.SetValue(value)
 	ta.Prompt = ""
 	ta.Cursor.Style = lipgloss.NewStyle().
@@ -54,9 +53,9 @@ func (m Cell) Update(msg tea.Msg) (Cell, tea.Cmd) {
 
 	m.textInput, cmd = m.textInput.Update(msg)
 	// h := strings.Count(m.textInput.Value(), "\n") + 2
-	h := m.textInput.LineCount() + 1
-	m.textInput.SetHeight(h)
-	width := runewidth.StringWidth(m.textInput.Value())
+	// h := m.textInput.LineCount() + 1
+	// m.textInput.SetHeight(h)
+	width := runewidth.StringWidth(m.textInput.Value()) + 2
 	return m, tea.Batch(cmd, updateWidthCmd(width))
 }
 
