@@ -13,12 +13,14 @@ import (
 const listHeight = 14
 
 var (
-	titleStyle        = lipgloss.NewStyle().MarginLeft(2)
-	itemStyle         = lipgloss.NewStyle().PaddingLeft(4)
-	selectedItemStyle = lipgloss.NewStyle().PaddingLeft(2).Foreground(lipgloss.Color("170"))
-	paginationStyle   = list.DefaultStyles().PaginationStyle.PaddingLeft(4)
-	helpStyle         = list.DefaultStyles().HelpStyle.PaddingLeft(4).PaddingBottom(1)
-	quitTextStyle     = lipgloss.NewStyle().Margin(1, 0, 2, 4)
+	// titleStyle        = lipgloss.NewStyle().MarginLeft(2)
+	itemStyle         = lipgloss.NewStyle().PaddingLeft(2)
+	selectedItemStyle = lipgloss.NewStyle().
+				PaddingLeft(0).
+				Foreground(lipgloss.Color("170"))
+	paginationStyle = list.DefaultStyles().PaginationStyle.PaddingLeft(4)
+	helpStyle       = list.DefaultStyles().HelpStyle.PaddingLeft(4).PaddingBottom(1)
+	quitTextStyle   = lipgloss.NewStyle().Margin(1, 0, 2, 4)
 )
 
 type item string
@@ -46,12 +48,13 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 		return
 	}
 
-	str := fmt.Sprintf("%d. %s", index+1, i)
+	str := fmt.Sprintf("%s", i)
 
 	fn := itemStyle.Render
 	if index == m.Index() {
 		fn = func(s ...string) string {
-			return selectedItemStyle.Render("> " + strings.Join(s, " "))
+			return selectedItemStyle.Render("> " +
+				strings.Replace(strings.Join(s, " "), "\n", "\n  ", -1))
 		}
 	}
 
@@ -87,13 +90,7 @@ func (m ListModel) Update(msg tea.Msg) (ListModel, tea.Cmd) {
 }
 
 func (m ListModel) View() string {
-	if m.choice != "" {
-		return quitTextStyle.Render(fmt.Sprintf("%s? Sounds good to me.", m.choice))
-	}
-	if m.quitting {
-		return quitTextStyle.Render("Not hungry? That’s cool.")
-	}
-	return "\n" + m.list.View()
+	return m.list.View()
 }
 
 func NewList(opts ...func(*ListModel)) ListModel {
@@ -104,9 +101,9 @@ func NewList(opts ...func(*ListModel)) ListModel {
 	l.Title = "Select a table:"
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(false)
+	l.SetShowFilter(false)
 	l.SetShowHelp(false)
 	l.SetShowTitle(false)
-	l.Styles.Title = titleStyle
 	l.Styles.PaginationStyle = paginationStyle
 	l.Styles.HelpStyle = helpStyle
 
@@ -126,15 +123,27 @@ func WithItems(items []list.Item) func(*ListModel) {
 	}
 }
 
+var headerStyle = lipgloss.NewStyle().Bold(true).Padding(0, 2).
+	Border(lipgloss.NormalBorder(), true, false, true, false).
+	BorderForeground(lipgloss.Color("240")).
+	Foreground(lipgloss.Color("249"))
+
+var santenReader = lipgloss.NewStyle().Padding(0, 2).
+	Foreground(lipgloss.Color("249"))
+
 func WithTables(tables []TableModel) func(*ListModel) {
 	return func(m *ListModel) {
 		var items []list.Item
 		for _, t := range tables {
-			var header string
+			var header []string
 			for _, c := range t.cols {
-				header += c.Title.Value() + "|"
+				header = append(header,
+					headerStyle.Render(c.Title.Value()))
 			}
-			items = append(items, item(header))
+			header = append(header,
+				headerStyle.Render("…"))
+
+			items = append(items, item(lipgloss.JoinHorizontal(lipgloss.Left, header...)))
 		}
 		m.list.SetItems(items)
 	}
