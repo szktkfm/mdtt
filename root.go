@@ -72,7 +72,7 @@ func NewRoot(file string) Model {
 			{"", ""},
 		}
 
-		t := New(
+		t := NewTable(
 			WithColumns(columns),
 			WithNaiveRows(rows),
 			WithFocused(true),

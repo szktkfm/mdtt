@@ -173,8 +173,8 @@ func (m *TableModel) SetStyles(s Styles) {
 //	table := New(WithColumns([]Column{{Title: "ID", Width: 10}}))
 type Option func(*TableModel)
 
-// New creates a new model for the table widget.
-func New(opts ...Option) TableModel {
+// NewTable creates a new model for the table widget.
+func NewTable(opts ...Option) TableModel {
 	m := TableModel{
 		cursor:   Cursor{0, 0},
 		viewport: viewport.New(0, 0),

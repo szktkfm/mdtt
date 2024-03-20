@@ -79,7 +79,7 @@ func (b *ModelBuilder) build() []TableModel {
 			cols = append(cols, Column{Title: NewCell(t.cols[i]), Width: 20})
 		}
 
-		t := New(
+		t := NewTable(
 			WithColumns(cols),
 			WithNaiveRows(rows),
 			WithFocused(true),

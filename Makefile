@@ -17,4 +17,4 @@ test:
 
 .PHONY: clean
 clean:
-	rm -f test
+	rm -f test debug.log

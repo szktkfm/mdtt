@@ -6,24 +6,39 @@ import (
 
 func TestParse(t *testing.T) {
 
-	// columns := []Column{
-	// 	{Title: NewCell("Key binding"), Width: 4},
-	// 	{Title: NewCell("Description"), Width: 20},
-	// }
-	// rows := []NaiveRow{
-	// 	{"`Arrows`, `hjkl`", "Move"},
-	// 	{"**Esc**, _q_", "Exit"},
-	// }
-	// want := New(
-	// 	WithColumns(columns),
-	// 	WithNaiveRows(rows),
-	// )
+	cols1 := []Column{
+		{Title: NewCell("Key binding"), Width: 4},
+		{Title: NewCell("Description"), Width: 20},
+	}
+	rows1 := []NaiveRow{
+		{"`Arrows`, `hjkl`", "Move"},
+	}
+	want1 := NewTable(
+		WithColumns(cols1),
+		WithNaiveRows(rows1),
+	)
 
-	// got := parse("testdata/01.md")
+	cols2 := []Column{
+		{Title: NewCell("Key binding"), Width: 4},
+		{Title: NewCell("Description"), Width: 20},
+	}
+	rows2 := []NaiveRow{
+		{"**Esc**, _q_", "Exit"},
+	}
+	want2 := NewTable(
+		WithColumns(cols2),
+		WithNaiveRows(rows2),
+	)
 
-	// if !isEqualTables(want, got.table) {
-	// 	t.Error("Table value is mismatch")
-	// }
+	got := parse("testdata/01.md")
+
+	if !isEqualTables(want1, got[0]) {
+		t.Error("Table value is mismatch")
+	}
+
+	if !isEqualTables(want2, got[1]) {
+		t.Error("Table value is mismatch")
+	}
 }
 
 func isEqualTables(x, y TableModel) bool {
