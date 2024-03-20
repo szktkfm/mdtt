@@ -62,9 +62,7 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 }
 
 type ListModel struct {
-	list     list.Model
-	choice   string
-	quitting bool
+	list list.Model
 }
 
 func (m ListModel) Init() tea.Cmd {
@@ -97,7 +95,7 @@ func NewList(opts ...func(*ListModel)) ListModel {
 	listItems := []list.Item{}
 	const defaultWidth = 20
 
-	l := list.New(listItems, itemDelegate{}, defaultWidth, listHeight)
+	l := list.New(listItems, itemDelegate{}, defaultWidth, 0)
 	l.Title = "Select a table:"
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(false)
@@ -112,6 +110,8 @@ func NewList(opts ...func(*ListModel)) ListModel {
 	for _, opt := range opts {
 		opt(&m)
 	}
+
+	m.list.SetHeight(len(m.list.Items()) * 2)
 
 	return m
 

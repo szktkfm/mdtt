@@ -33,7 +33,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q":
-			print(m.table)
+			if !m.preview {
+				print(m.table)
+			}
 			return m, tea.Quit
 		}
 	case SelectMsg:
