@@ -18,7 +18,21 @@ import (
 
 var highPriority = 100
 
-func parse(file string) Model {
+// ModelBuilder build tea.Model from  markdown
+type ModelBuilder struct {
+	inTable bool
+	buf     *bytes.Buffer
+	rows    []string
+	cols    []string
+	tables  []Table
+}
+
+type Table struct {
+	rows []string
+	cols []string
+}
+
+func parse(file string) []TableModel {
 	f, _ := os.Open(file)
 	defer f.Close()
 	s, _ := io.ReadAll(f)
@@ -51,29 +65,33 @@ func parse(file string) Model {
 	return m
 }
 
-func (b *ModelBuilder) build() Model {
-	var rows []NaiveRow
-	for i := range len(b.rows) / len(b.cols) {
-		rows = append(rows, b.rows[i*len(b.cols):(i+1)*len(b.cols)])
+func (b *ModelBuilder) build() []TableModel {
+
+	var models []TableModel
+	for _, t := range b.tables {
+		var rows []NaiveRow
+		for i := range len(t.rows) / len(t.cols) {
+			rows = append(rows, t.rows[i*len(t.cols):(i+1)*len(t.cols)])
+		}
+
+		var cols []Column
+		for i := range len(t.cols) {
+			cols = append(cols, Column{Title: NewCell(t.cols[i]), Width: 20})
+		}
+
+		t := New(
+			WithColumns(cols),
+			WithNaiveRows(rows),
+			WithFocused(true),
+			WithHeight(len(rows)+1),
+		)
+
+		style := DefaultStyles()
+
+		t.SetStyles(style)
+		models = append(models, t)
 	}
-
-	var cols []Column
-	for i := range len(b.cols) {
-		cols = append(cols, Column{Title: NewCell(b.cols[i]), Width: 20})
-	}
-
-	t := New(
-		WithColumns(cols),
-		WithNaiveRows(rows),
-		WithFocused(true),
-		WithHeight(len(rows)+1),
-	)
-
-	style := DefaultStyles()
-
-	t.SetStyles(style)
-	m := Model{t}
-	return m
+	return models
 }
 
 // Options is used to configure an ANSIRenderer.
@@ -82,14 +100,6 @@ type Options struct {
 	WordWrap         int
 	PreserveNewLines bool
 	ColorProfile     termenv.Profile
-}
-
-// ModelBuilder build tea.Model from  markdown
-type ModelBuilder struct {
-	inTable bool
-	buf     *bytes.Buffer
-	rows    []string
-	cols    []string
 }
 
 // NewModelBuilder returns a new ANSIRenderer with style and options set.
@@ -169,6 +179,9 @@ func (r *ModelBuilder) renderNode(w util.BufWriter, source []byte, node ast.Node
 		log.Debugf("<End %v", node.Kind().String())
 
 		if node.Kind() == astext.KindTable {
+			r.tables = append(r.tables, Table{r.rows, r.cols})
+			r.rows = nil
+			r.cols = nil
 			r.inTable = false
 		}
 

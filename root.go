@@ -1,12 +1,8 @@
 package mdtt
 
 import (
-	"fmt"
-	"strings"
-
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/log"
 )
 
 // Enum of Mode
@@ -22,7 +18,11 @@ var baseStyle = lipgloss.NewStyle().
 	BorderForeground(lipgloss.Color("240"))
 
 type Model struct {
-	table TableModel
+	preview bool
+	tables  []TableModel
+	table   TableModel
+	choose  int
+	list    ListModel
 }
 
 func (m Model) Init() tea.Cmd { return nil }
@@ -31,48 +31,32 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		log.Debug("msg", "msg", msg)
 		switch msg.String() {
 		case "q":
 			print(m.table)
 			return m, tea.Quit
 		}
+	case SelectMsg:
+		m.preview = false
+		m.choose = msg.idx
+		m.table = m.tables[msg.idx]
 	}
-	m.table, cmd = m.table.Update(msg)
+
+	if m.preview {
+		m.list, cmd = m.list.Update(msg)
+	} else {
+		m.table, cmd = m.table.Update(msg)
+	}
+
 	return m, cmd
 }
 
-func print(m TableModel) {
-	var sb strings.Builder
-	var width int
-
-	for _, c := range m.cols {
-		sb.WriteString("|")
-		sb.WriteString(PadOrTruncate(c.Title.Value(), c.Width))
-		width += c.Width
-	}
-	sb.WriteString("|\n")
-
-	for _, c := range m.cols {
-		sb.WriteString("|")
-		sb.WriteString(strings.Repeat("-", c.Width))
-	}
-	sb.WriteString("|\n")
-
-	for _, row := range m.rows {
-		for i, c := range row {
-			sb.WriteString("|")
-			sb.WriteString(PadOrTruncate(c.Value(), m.cols[i].Width))
-		}
-		sb.WriteString("|\n")
-	}
-	sb.WriteString("\n")
-
-	fmt.Print(sb.String())
-}
-
 func (m Model) View() string {
-	return baseStyle.Render(m.table.View()) + "\n"
+	if m.preview {
+		return m.list.View()
+	} else {
+		return baseStyle.Render(m.table.View()) + "\n"
+	}
 }
 
 func NewRoot(file string) Model {
@@ -95,8 +79,23 @@ func NewRoot(file string) Model {
 
 		s := DefaultStyles()
 		t.SetStyles(s)
-		return Model{t}
+		return Model{table: t}
 	}
 
-	return parse(file)
+	tables := parse(file)
+	list := NewList(
+		WithTables(tables),
+	)
+	m := Model{
+		table:  tables[0],
+		list:   list,
+		tables: tables,
+	}
+
+	if len(tables) == 1 {
+		m.preview = false
+	} else {
+		m.preview = true
+	}
+	return m
 }
