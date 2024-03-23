@@ -10,8 +10,7 @@
 | **Esc**, _q_       | Exit with cd       |
 | `y`              | yank current dir   |
 
-The `EDITOR` or `WALK_EDITOR` environment variable used for opening files from
-the walk.
+first line
 
 
 ## Usage2
@@ -22,6 +21,5 @@ the walk.
 |**Esc**, _q_        |Exit with cd        |
 |`y`                 |yank current dir    |
 
-The `EDITOR` or `WALK_EDITOR` environment variable used for opening files from
-the walk.
+second line
 

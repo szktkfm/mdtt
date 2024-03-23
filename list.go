@@ -10,8 +10,6 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-const listHeight = 14
-
 var (
 	// titleStyle        = lipgloss.NewStyle().MarginLeft(2)
 	itemStyle         = lipgloss.NewStyle().PaddingLeft(2)
@@ -20,7 +18,6 @@ var (
 				Foreground(lipgloss.Color("170"))
 	paginationStyle = list.DefaultStyles().PaginationStyle.PaddingLeft(4)
 	helpStyle       = list.DefaultStyles().HelpStyle.PaddingLeft(4).PaddingBottom(1)
-	quitTextStyle   = lipgloss.NewStyle().Margin(1, 0, 2, 4)
 )
 
 type item string
@@ -126,9 +123,6 @@ func WithItems(items []list.Item) func(*ListModel) {
 var headerStyle = lipgloss.NewStyle().Bold(true).Padding(0, 2).
 	Border(lipgloss.NormalBorder(), true, false, true, false).
 	BorderForeground(lipgloss.Color("240")).
-	Foreground(lipgloss.Color("249"))
-
-var santenReader = lipgloss.NewStyle().Padding(0, 2).
 	Foreground(lipgloss.Color("249"))
 
 func WithTables(tables []TableModel) func(*ListModel) {

@@ -1,7 +1,10 @@
 package mdtt
 
 import (
+	"bufio"
 	"fmt"
+	"io"
+	"regexp"
 	"strings"
 )
 
@@ -32,4 +35,89 @@ func print(m TableModel) {
 	sb.WriteString("\n")
 
 	fmt.Print(sb.String())
+}
+
+func writeTable(s []byte) {
+
+}
+
+// (?<=\|?\s*)-+
+// ^\s*\|?\s*\-+
+
+var tableDelimLeft = regexp.MustCompile(`^\s*\:\-+\s*$`)
+var tableDelimRight = regexp.MustCompile(`^\s*\-+\:\s*$`)
+var tableDelimCenter = regexp.MustCompile(`^\s*\:\-+\:\s*$`)
+var tableDelimNone = regexp.MustCompile(`^\s*\-+\s*$`)
+var tableDelim = regexp.MustCompile(`^\s*\|?\s*\-+`)
+
+func findSegment(fp io.Reader) TableSegment {
+	fmt.Println([]byte(fmt.Sprint(fp)))
+	scanner := bufio.NewScanner(fp)
+
+	var (
+		prevlen  int
+		prevline string
+		pos      int
+		inTable  bool
+		start    int
+		end      int
+	)
+
+	for scanner.Scan() {
+		fmt.Println("byte: ", scanner.Bytes())
+		l := scanner.Text()
+		if inTable {
+			if l == "" {
+				inTable = false
+				end = pos
+			}
+		}
+
+		pos += len(l) + 1
+		fmt.Println("pos: ", pos)
+		fmt.Println("prevlen: ", prevlen)
+
+		if tableDelimLeft.MatchString(l) ||
+			tableDelimRight.MatchString(l) ||
+			tableDelimCenter.MatchString(l) ||
+			tableDelimNone.MatchString(l) ||
+			tableDelim.MatchString(l) {
+			// header check
+			if len(strings.Split(trimPipe(prevline), "|")) <= len(strings.Split(trimPipe(l), "|")) {
+				inTable = true
+				start = pos - len(l) - prevlen
+			} else {
+				continue
+			}
+
+		}
+		fmt.Println("start: ", start)
+
+		prevline = l
+		prevlen = len(l) + 1
+	}
+	if inTable {
+		end = pos
+	}
+
+	// TODO: listで返す
+	return TableSegment{Start: start, Length: end - start}
+}
+
+func trimPipe(l string) string {
+	if l[0] == '|' {
+		l = l[1:]
+	}
+	if l[len(l)-1] == '|' {
+		l = l[:len(l)-1]
+	}
+	return l
+}
+
+type TableWriter struct {
+	segs []TableSegment
+}
+type TableSegment struct {
+	Start  int
+	Length int
 }
