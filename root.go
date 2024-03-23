@@ -13,9 +13,12 @@ const (
 	HEADER_INSERT
 )
 
-var baseStyle = lipgloss.NewStyle().
-	BorderStyle(lipgloss.NormalBorder()).
-	BorderForeground(lipgloss.Color("240"))
+var (
+	defaultHeight = 3
+	baseStyle     = lipgloss.NewStyle().
+			BorderStyle(lipgloss.NormalBorder()).
+			BorderForeground(lipgloss.Color("240"))
+)
 
 type Model struct {
 	preview bool
@@ -61,39 +64,39 @@ func (m Model) View() string {
 	}
 }
 
-func NewRoot(file string) Model {
-	if file == "" {
-		t := NewTable(
-			WithColumns(DefaultColumns()),
-			WithNaiveRows(DefaultRows()),
-			WithFocused(true),
-			WithHeight(defaultHeight),
-			WithStyles(DefaultStyles()),
-		)
-		return Model{table: t}
-	}
-
-	tables := parse(file)
-	list := NewList(
-		WithTables(tables),
+func NewRoot(opts ...func(*Model)) Model {
+	t := NewTable(
+		WithColumns(DefaultColumns()),
+		WithNaiveRows(DefaultRows()),
+		WithFocused(true),
+		WithHeight(defaultHeight),
+		WithStyles(DefaultStyles()),
 	)
-	m := Model{
-		table:  tables[0],
-		list:   list,
-		tables: tables,
+	m := Model{table: t}
+
+	for _, opt := range opts {
+		opt(&m)
 	}
 
-	if len(tables) == 1 {
-		m.preview = false
-	} else {
-		m.preview = true
-	}
 	return m
 }
 
-var (
-	defaultHeight = 3
-)
+func WithMDFile(file string) func(*Model) {
+	return func(m *Model) {
+		tables := parse(file)
+		list := NewList(
+			WithTables(tables),
+		)
+		m.table = tables[0]
+		m.list = list
+		m.tables = tables
+		if len(tables) == 1 {
+			m.preview = false
+		} else {
+			m.preview = true
+		}
+	}
+}
 
 func DefaultRows() []NaiveRow {
 	return []NaiveRow{

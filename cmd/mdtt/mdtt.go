@@ -37,10 +37,12 @@ var (
 
 			var model mdtt.Model
 			if len(args) == 0 {
-				model = mdtt.NewRoot("")
+				model = mdtt.NewRoot()
 
 			} else {
-				model = mdtt.NewRoot(args[0])
+				model = mdtt.NewRoot(
+					mdtt.WithMDFile(args[0]),
+				)
 			}
 
 			p := tea.NewProgram(
