@@ -26,5 +26,4 @@ func TestFindSegment(t *testing.T) {
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Errorf("differs: (-want +got)\n%s", diff)
 	}
-
 }
