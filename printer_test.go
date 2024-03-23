@@ -2,10 +2,11 @@ package mdtt
 
 import (
 	"bytes"
-	"fmt"
+	"io"
 	"os"
 	"testing"
 
+	"github.com/charmbracelet/log"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -31,29 +32,45 @@ func TestFindSegment(t *testing.T) {
 }
 
 func TestReplaceTable(t *testing.T) {
+	testCases := []struct {
+		name string
+		src  string
+		wnt  string
+	}{
+		{
+			name: "Test Case 1",
+			src:  "testdata/replace01.md",
+			wnt:  "testdata/replace_want01.md",
+		},
+		// Add more test cases here
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			want, got := testUtilReplaceTable(tc.src, tc.wnt)
+
+			if diff := cmp.Diff(string(want), string(got)); diff != "" {
+				t.Errorf("differs: (-want +got)\n%s", diff)
+			}
+		})
+	}
+}
+
+func testUtilReplaceTable(src, wnt string) ([]byte, []byte) {
 	tw := TableWriter{}
-	fp, _ := os.Open("testdata/replace01.md")
+	fp, _ := os.Open(src)
 	defer fp.Close()
 
 	m := NewRoot(
-		WithMDFile("testdata/replace_want01.md"),
+		WithMDFile(wnt),
 	)
 
 	tw.render(m.table)
-	b := tw.replaceTable(fp)
+	got := tw.replaceTable(fp)
 
-	fmt.Println(string(b))
-	// fp2, _ := os.Open("testdata/replace_want01.md")
-	// defer fp2.Close()
-	// want, _ := io.ReadAll(fp2)
-	want := `# Title
-| foo2                               | bar                                 |
-| -----------------------------------| ----------------------------------- |
-| bazaaaa                            | bim                                 |
-`
-
-	if diff := cmp.Diff(string(want), string(b)); diff != "" {
-		t.Errorf("differs: (-want +got)\n%s", diff)
-	}
-
+	log.Debug(string(got))
+	fp2, _ := os.Open(wnt)
+	defer fp2.Close()
+	want, _ := io.ReadAll(fp2)
+	return got, want
 }
