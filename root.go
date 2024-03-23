@@ -14,7 +14,7 @@ const (
 )
 
 var (
-	defaultHeight = 3
+	defaultHeight = 2
 	baseStyle     = lipgloss.NewStyle().
 			BorderStyle(lipgloss.NormalBorder()).
 			BorderForeground(lipgloss.Color("240"))
@@ -26,6 +26,8 @@ type Model struct {
 	table   TableModel
 	choose  int
 	list    ListModel
+	fpath   string
+	inplace bool
 }
 
 func (m Model) Init() tea.Cmd { return nil }
@@ -36,8 +38,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q":
+			// insertモードでもないのにqが押されたら終了してしまう
 			if !m.preview {
-				print(m.table)
+				Write(m)
 			}
 			return m, tea.Quit
 		}
@@ -81,9 +84,9 @@ func NewRoot(opts ...func(*Model)) Model {
 	return m
 }
 
-func WithMDFile(file string) func(*Model) {
+func WithMDFile(fpath string) func(*Model) {
 	return func(m *Model) {
-		tables := parse(file)
+		tables := parse(fpath)
 		list := NewList(
 			WithTables(tables),
 		)
@@ -95,6 +98,13 @@ func WithMDFile(file string) func(*Model) {
 		} else {
 			m.preview = true
 		}
+		m.fpath = fpath
+	}
+}
+
+func WithInplace(i bool) func(*Model) {
+	return func(m *Model) {
+		m.inplace = i
 	}
 }
 

@@ -32,8 +32,10 @@ var (
 				defer logger.Close()
 			}
 
-			// parse markdown
-			// create model
+			inplace, _ := cmd.Flags().GetBool("inplace")
+			if inplace && len(args) == 0 {
+				log.Fatal("no input files")
+			}
 
 			var model mdtt.Model
 			if len(args) == 0 {
@@ -42,6 +44,7 @@ var (
 			} else {
 				model = mdtt.NewRoot(
 					mdtt.WithMDFile(args[0]),
+					mdtt.WithInplace(inplace),
 				)
 			}
 
@@ -72,10 +75,11 @@ func init() {
 		false,
 		"passing this flag will allow writing debug output to debug.log",
 	)
-	rootCmd.Flags().Bool(
-		"p",
+	rootCmd.Flags().BoolP(
+		"inplace",
+		"i",
 		false,
-		"test parse",
+		"in-place update",
 	)
 	rootCmd.Flags().BoolP(
 		"help",

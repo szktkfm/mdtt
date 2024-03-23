@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/log"
 )
 
 // TableModel defines a state for the table widget.
@@ -655,7 +656,7 @@ func (m *TableModel) renderRow(rowID int) string {
 		var value string
 		if isInsertMode && isSelected {
 			value = cell.View()
-			// log.Debug("インサート", "test", value)
+			log.Debug("インサート", "test", value)
 		} else {
 			value = cell.Value()
 			// log.Debug("", "test", value)

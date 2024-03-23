@@ -4,11 +4,14 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"os"
 	"regexp"
 	"strings"
+
+	"github.com/charmbracelet/log"
 )
 
-func print(m TableModel) {
+func (t *TableWriter) render(m TableModel) {
 	var sb strings.Builder
 	var width int
 
@@ -32,14 +35,41 @@ func print(m TableModel) {
 		}
 		sb.WriteString("|\n")
 	}
-	sb.WriteString("\n")
 
-	fmt.Print(sb.String())
+	t.text = sb.String()
+}
+
+func Write(m Model) {
+	tw := TableWriter{}
+	tw.write(m)
+}
+
+func (t *TableWriter) write(m Model) {
+
+	t.render(m.table)
+
+	if m.inplace {
+		fp, err := os.Open(m.fpath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer fp.Close()
+		t.findSegment(fp)
+		fp.Seek(0, 0)
+		b, _ := io.ReadAll(fp)
+		b = append(b[:t.seg.start-1],
+			append([]byte(t.text), b[t.seg.end:]...)...)
+
+		os.WriteFile(m.fpath, b, 0644)
+	} else {
+		fmt.Print(t.text)
+	}
 }
 
 // (?<=\|?\s*)-+
 // ^\s*\|?\s*\-+
 
+// TODO: delimeterの左寄せとか
 var tableDelimLeft = regexp.MustCompile(`^\s*\:\-+\s*$`)
 var tableDelimRight = regexp.MustCompile(`^\s*\-+\:\s*$`)
 var tableDelimCenter = regexp.MustCompile(`^\s*\:\-+\:\s*$`)
@@ -47,7 +77,7 @@ var tableDelimNone = regexp.MustCompile(`^\s*\-+\s*$`)
 var tableDelim = regexp.MustCompile(`^\s*\|?\s*\-+`)
 
 func (t *TableWriter) findSegment(fp io.Reader) {
-	fmt.Println([]byte(fmt.Sprint(fp)))
+	// fmt.Println([]byte(fmt.Sprint(fp)))
 	scanner := bufio.NewScanner(fp)
 
 	var (
@@ -60,7 +90,6 @@ func (t *TableWriter) findSegment(fp io.Reader) {
 	)
 
 	for scanner.Scan() {
-		fmt.Println("byte: ", scanner.Bytes())
 		l := scanner.Text()
 		if inTable {
 			if l == "" {
@@ -70,8 +99,6 @@ func (t *TableWriter) findSegment(fp io.Reader) {
 		}
 
 		pos += len(l) + 1
-		fmt.Println("pos: ", pos)
-		fmt.Println("prevlen: ", prevlen)
 
 		if tableDelimLeft.MatchString(l) ||
 			tableDelimRight.MatchString(l) ||
@@ -87,8 +114,6 @@ func (t *TableWriter) findSegment(fp io.Reader) {
 			}
 
 		}
-		fmt.Println("start: ", start)
-
 		prevline = l
 		prevlen = len(l) + 1
 	}
@@ -97,7 +122,7 @@ func (t *TableWriter) findSegment(fp io.Reader) {
 	}
 
 	// TODO: listで返す
-	t.seg = TableSegment{Start: start - 1, Length: end - start}
+	t.seg = TableSegment{start: start, end: end}
 }
 
 func trimPipe(l string) string {
@@ -110,15 +135,12 @@ func trimPipe(l string) string {
 	return l
 }
 
-func (t *TableWriter) write(s []byte) {
-
-}
-
 type TableWriter struct {
 	segs []TableSegment
 	seg  TableSegment
+	text string
 }
 type TableSegment struct {
-	Start  int
-	Length int
+	start int
+	end   int
 }

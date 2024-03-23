@@ -19,8 +19,8 @@ func TestFindSegment(t *testing.T) {
 	tw.findSegment(b)
 	got := tw.seg
 	want := TableSegment{
-		Start:  8,
-		Length: 41,
+		start: 9,
+		end:   50,
 	}
 
 	if diff := cmp.Diff(want, got); diff != "" {
