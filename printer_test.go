@@ -8,15 +8,18 @@ import (
 )
 
 func TestFindSegment(t *testing.T) {
+	tw := TableWriter{}
+
 	md := `# Title
 | foo | bar |
 | --- | --- |
 | baz | bim |
 `
 	b := bytes.NewBuffer([]byte(md))
-	got := findSegment(b)
+	tw.findSegment(b)
+	got := tw.seg
 	want := TableSegment{
-		Start:  9,
+		Start:  8,
 		Length: 41,
 	}
 

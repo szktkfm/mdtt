@@ -37,10 +37,6 @@ func print(m TableModel) {
 	fmt.Print(sb.String())
 }
 
-func writeTable(s []byte) {
-
-}
-
 // (?<=\|?\s*)-+
 // ^\s*\|?\s*\-+
 
@@ -50,7 +46,7 @@ var tableDelimCenter = regexp.MustCompile(`^\s*\:\-+\:\s*$`)
 var tableDelimNone = regexp.MustCompile(`^\s*\-+\s*$`)
 var tableDelim = regexp.MustCompile(`^\s*\|?\s*\-+`)
 
-func findSegment(fp io.Reader) TableSegment {
+func (t *TableWriter) findSegment(fp io.Reader) {
 	fmt.Println([]byte(fmt.Sprint(fp)))
 	scanner := bufio.NewScanner(fp)
 
@@ -101,7 +97,7 @@ func findSegment(fp io.Reader) TableSegment {
 	}
 
 	// TODO: listで返す
-	return TableSegment{Start: start, Length: end - start}
+	t.seg = TableSegment{Start: start - 1, Length: end - start}
 }
 
 func trimPipe(l string) string {
@@ -114,8 +110,13 @@ func trimPipe(l string) string {
 	return l
 }
 
+func (t *TableWriter) write(s []byte) {
+
+}
+
 type TableWriter struct {
 	segs []TableSegment
+	seg  TableSegment
 }
 type TableSegment struct {
 	Start  int

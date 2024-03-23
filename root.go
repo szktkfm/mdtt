@@ -63,24 +63,13 @@ func (m Model) View() string {
 
 func NewRoot(file string) Model {
 	if file == "" {
-		columns := []Column{
-			{Title: NewCell(""), Width: 4},
-			{Title: NewCell(""), Width: 4},
-		}
-
-		rows := []NaiveRow{
-			{"", ""},
-		}
-
 		t := NewTable(
-			WithColumns(columns),
-			WithNaiveRows(rows),
+			WithColumns(DefaultColumns()),
+			WithNaiveRows(DefaultRows()),
 			WithFocused(true),
-			WithHeight(len(rows)+1),
+			WithHeight(defaultHeight),
+			WithStyles(DefaultStyles()),
 		)
-
-		s := DefaultStyles()
-		t.SetStyles(s)
 		return Model{table: t}
 	}
 
@@ -100,4 +89,21 @@ func NewRoot(file string) Model {
 		m.preview = true
 	}
 	return m
+}
+
+var (
+	defaultHeight = 3
+)
+
+func DefaultRows() []NaiveRow {
+	return []NaiveRow{
+		{"", ""},
+	}
+}
+
+func DefaultColumns() []Column {
+	return []Column{
+		{Title: NewCell(""), Width: 4},
+		{Title: NewCell(""), Width: 4},
+	}
 }
