@@ -11,6 +11,22 @@ import (
 	"github.com/charmbracelet/log"
 )
 
+func Write(m Model) {
+	tw := TableWriter{}
+	tw.write(m)
+}
+
+type TableWriter struct {
+	// segをフィールドに持つ必要ないのでは
+	segs []TableSegment
+	seg  TableSegment
+	text string
+}
+type TableSegment struct {
+	Start int
+	End   int
+}
+
 func (t *TableWriter) render(m TableModel) {
 	var sb strings.Builder
 	var width int
@@ -39,13 +55,7 @@ func (t *TableWriter) render(m TableModel) {
 	t.text = sb.String()
 }
 
-func Write(m Model) {
-	tw := TableWriter{}
-	tw.write(m)
-}
-
 func (t *TableWriter) write(m Model) {
-
 	t.render(m.table)
 
 	if m.inplace {
@@ -54,11 +64,12 @@ func (t *TableWriter) write(m Model) {
 			log.Fatal(err)
 		}
 		defer fp.Close()
+
 		t.findSegment(fp)
 		fp.Seek(0, 0)
 		b, _ := io.ReadAll(fp)
-		b = append(b[:t.seg.start-1],
-			append([]byte(t.text), b[t.seg.end:]...)...)
+		b = append(b[:t.seg.Start-1],
+			append([]byte(t.text), b[t.seg.End:]...)...)
 
 		os.WriteFile(m.fpath, b, 0644)
 	} else {
@@ -70,11 +81,11 @@ func (t *TableWriter) write(m Model) {
 // ^\s*\|?\s*\-+
 
 // TODO: delimeterの左寄せとか
-var tableDelimLeft = regexp.MustCompile(`^\s*\:\-+\s*$`)
-var tableDelimRight = regexp.MustCompile(`^\s*\-+\:\s*$`)
-var tableDelimCenter = regexp.MustCompile(`^\s*\:\-+\:\s*$`)
-var tableDelimNone = regexp.MustCompile(`^\s*\-+\s*$`)
-var tableDelim = regexp.MustCompile(`^\s*\|?\s*\-+`)
+// var tableDelimLeft = regexp.MustCompile(`^\s*\:\-+\s*$`)
+// var tableDelimRight = regexp.MustCompile(`^\s*\-+\:\s*$`)
+// var tableDelimCenter = regexp.MustCompile(`^\s*\:\-+\:\s*$`)
+// var tableDelimNone = regexp.MustCompile(`^\s*\-+\s*$`)
+var tableDelim = regexp.MustCompile(`^\s*\|?\s*\-+\s*\|?\s*`)
 
 func (t *TableWriter) findSegment(fp io.Reader) {
 	// fmt.Println([]byte(fmt.Sprint(fp)))
@@ -99,13 +110,12 @@ func (t *TableWriter) findSegment(fp io.Reader) {
 		}
 
 		pos += len(l) + 1
-
-		if tableDelimLeft.MatchString(l) ||
-			tableDelimRight.MatchString(l) ||
-			tableDelimCenter.MatchString(l) ||
-			tableDelimNone.MatchString(l) ||
-			tableDelim.MatchString(l) {
+		if tableDelim.MatchString(l) {
 			// header check
+			log.Debug("line", l)
+			if prevline == "" {
+				continue
+			}
 			if len(strings.Split(trimPipe(prevline), "|")) <= len(strings.Split(trimPipe(l), "|")) {
 				inTable = true
 				start = pos - len(l) - prevlen
@@ -122,7 +132,9 @@ func (t *TableWriter) findSegment(fp io.Reader) {
 	}
 
 	// TODO: listで返す
-	t.seg = TableSegment{start: start, end: end}
+	log.Debug(t)
+	t.seg = TableSegment{Start: start, End: end}
+	log.Debugf("start: %d, end: %d", start, end)
 }
 
 func trimPipe(l string) string {
@@ -133,14 +145,4 @@ func trimPipe(l string) string {
 		l = l[:len(l)-1]
 	}
 	return l
-}
-
-type TableWriter struct {
-	segs []TableSegment
-	seg  TableSegment
-	text string
-}
-type TableSegment struct {
-	start int
-	end   int
 }

@@ -76,7 +76,8 @@ func (b *ModelBuilder) build() []TableModel {
 
 		var cols []Column
 		for i := range len(t.cols) {
-			cols = append(cols, Column{Title: NewCell(t.cols[i]), Width: 20})
+			//todo: widthおかしい
+			cols = append(cols, Column{Title: NewCell(t.cols[i]), Width: 35})
 		}
 
 		t := NewTable(
