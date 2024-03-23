@@ -11,11 +11,6 @@ import (
 	"github.com/charmbracelet/log"
 )
 
-func Write(m Model) {
-	tw := TableWriter{}
-	tw.write(m)
-}
-
 type TableWriter struct {
 	// segをフィールドに持つ必要ないのでは
 	segs []TableSegment
@@ -25,6 +20,24 @@ type TableWriter struct {
 type TableSegment struct {
 	Start int
 	End   int
+}
+
+func Write(m Model) {
+	tw := TableWriter{}
+	tw.render(m.table)
+	if m.inplace {
+		fp, err := os.Open(m.fpath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer fp.Close()
+
+		b := tw.replaceTable(fp)
+		os.WriteFile(m.fpath, b, 0644)
+
+	} else {
+		fmt.Print(tw.text)
+	}
 }
 
 func (t *TableWriter) render(m TableModel) {
@@ -55,26 +68,13 @@ func (t *TableWriter) render(m TableModel) {
 	t.text = sb.String()
 }
 
-func (t *TableWriter) write(m Model) {
-	t.render(m.table)
-
-	if m.inplace {
-		fp, err := os.Open(m.fpath)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer fp.Close()
-
-		t.findSegment(fp)
-		fp.Seek(0, 0)
-		b, _ := io.ReadAll(fp)
-		b = append(b[:t.seg.Start-1],
-			append([]byte(t.text), b[t.seg.End:]...)...)
-
-		os.WriteFile(m.fpath, b, 0644)
-	} else {
-		fmt.Print(t.text)
-	}
+func (t *TableWriter) replaceTable(fp *os.File) []byte {
+	t.findSegment(fp)
+	fp.Seek(0, 0)
+	b, _ := io.ReadAll(fp)
+	b = append(b[:t.seg.Start-1],
+		append([]byte(t.text), b[t.seg.End:]...)...)
+	return b
 }
 
 // (?<=\|?\s*)-+
