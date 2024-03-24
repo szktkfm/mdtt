@@ -86,7 +86,7 @@ func (t *TableWriter) replaceTable(fp *os.File) []byte {
 // var tableDelimRight = regexp.MustCompile(`^\s*\-+\:\s*$`)
 // var tableDelimCenter = regexp.MustCompile(`^\s*\:\-+\:\s*$`)
 // var tableDelimNone = regexp.MustCompile(`^\s*\-+\s*$`)
-var tableDelim = regexp.MustCompile(`^\s*\|?\s*\-+\s*\|?\s*`)
+var tableDelim = regexp.MustCompile(`^\s*\|?\s*\-+(\s*|\|?|\-+)*$`)
 
 func (t *TableWriter) findSegment(fp io.Reader) {
 	// fmt.Println([]byte(fmt.Sprint(fp)))

@@ -43,6 +43,11 @@ func TestReplaceTable(t *testing.T) {
 			wnt:  "testdata/replace_want01.md",
 		},
 		// Add more test cases here
+		{
+			name: "Test Case 2",
+			src:  "testdata/replace02.md",
+			wnt:  "testdata/replace_want02.md",
+		},
 	}
 
 	for _, tc := range testCases {
