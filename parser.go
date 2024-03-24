@@ -65,6 +65,13 @@ func parse(file string) []TableModel {
 	return m
 }
 
+// func max(a, b int) int {
+// 	if a > b {
+// 		return a
+// 	}
+// 	return b
+// }
+
 func (b *ModelBuilder) build() []TableModel {
 
 	var models []TableModel
@@ -77,7 +84,12 @@ func (b *ModelBuilder) build() []TableModel {
 		var cols []Column
 		for i := range len(t.cols) {
 			//todo: widthおかしい
-			cols = append(cols, Column{Title: NewCell(t.cols[i]), Width: 35})
+			var maxWidth int
+			for _, r := range rows {
+				maxWidth = max(len(r[i]), maxWidth)
+			}
+			maxWidth = max(maxWidth, len(t.cols[i]))
+			cols = append(cols, Column{Title: NewCell(t.cols[i]), Width: maxWidth + 2})
 		}
 
 		t := NewTable(

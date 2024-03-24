@@ -46,23 +46,24 @@ func (t *TableWriter) render(m TableModel) {
 
 	for _, c := range m.cols {
 		sb.WriteString("| ")
-		sb.WriteString(PadOrTruncate(c.Title.Value(), c.Width))
+		sb.WriteString(PadOrTruncate(c.Title.Value(), c.Width-1))
 		width += c.Width
 	}
-	sb.WriteString(" |\n")
+	sb.WriteString("|\n")
 
 	for _, c := range m.cols {
 		sb.WriteString("| ")
-		sb.WriteString(strings.Repeat("-", c.Width))
+		sb.WriteString(strings.Repeat("-", c.Width-2))
+		sb.WriteString(" ")
 	}
-	sb.WriteString(" |\n")
+	sb.WriteString("|\n")
 
 	for _, row := range m.rows {
 		for i, c := range row {
 			sb.WriteString("| ")
-			sb.WriteString(PadOrTruncate(c.Value(), m.cols[i].Width))
+			sb.WriteString(PadOrTruncate(c.Value(), m.cols[i].Width-1))
 		}
-		sb.WriteString(" |\n")
+		sb.WriteString("|\n")
 	}
 
 	t.text = sb.String()
