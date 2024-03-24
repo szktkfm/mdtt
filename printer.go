@@ -78,46 +78,64 @@ func (t *TableWriter) replaceTable(fp *os.File) []byte {
 	return b
 }
 
-// (?<=\|?\s*)-+
-// ^\s*\|?\s*\-+
-
-// TODO: delimeterの左寄せとか
-// var tableDelimLeft = regexp.MustCompile(`^\s*\:\-+\s*$`)
-// var tableDelimRight = regexp.MustCompile(`^\s*\-+\:\s*$`)
-// var tableDelimCenter = regexp.MustCompile(`^\s*\:\-+\:\s*$`)
-// var tableDelimNone = regexp.MustCompile(`^\s*\-+\s*$`)
-var tableDelim = regexp.MustCompile(`^\s*\|?\s*\-+(\s*|\|?|\-+)*$`)
+var (
+	tableDelimLeft   = regexp.MustCompile(`^\s*\:\-+\s*$`)
+	tableDelimRight  = regexp.MustCompile(`^\s*\-+\:\s*$`)
+	tableDelimCenter = regexp.MustCompile(`^\s*\:\-+\:\s*$`)
+	tableDelimNone   = regexp.MustCompile(`^\s*\-+\s*$`)
+	thematicBreak    = regexp.MustCompile(`^\s{0,3}((-\s*){3,}|(\*\s*){3,}|(_\s*){3,})\s*$`)
+	prefixSpace      = regexp.MustCompile(`^\s{0,3}`)
+	// prefixSpace      = regexp.MustCompile(`^\s{0,3}`)
+	fencedCodeBlock = regexp.MustCompile("^```|~~~.*$")
+)
 
 func (t *TableWriter) findSegment(fp io.Reader) {
-	// fmt.Println([]byte(fmt.Sprint(fp)))
 	scanner := bufio.NewScanner(fp)
 
 	var (
 		prevlen  int
 		prevline string
 		pos      int
-		inTable  bool
 		start    int
 		end      int
 	)
 
+	var (
+		inTable     bool
+		inCodeBlock bool
+	)
+
 	for scanner.Scan() {
 		l := scanner.Text()
+
+		// TODO: ```で始まって ~~~で閉じている場合
+		if isCodeFence(l) {
+			inCodeBlock = !inCodeBlock
+		}
+
 		if inTable {
-			if l == "" {
+			if isNewLine(l) || isThematicBreak(l) {
 				inTable = false
 				end = pos
 			}
 		}
 
+		if inCodeBlock {
+			pos += len(l) + 1
+			prevline = l
+			prevlen = len(l) + 1
+			continue
+		}
+
 		pos += len(l) + 1
-		if tableDelim.MatchString(l) {
+		if matchDelimiter(l) {
 			// header check
-			log.Debug("line", l)
-			if prevline == "" {
+			if isNewLine(prevline) {
 				continue
 			}
-			if len(strings.Split(trimPipe(prevline), "|")) <= len(strings.Split(trimPipe(l), "|")) {
+
+			// spaceがprefixに四つ以上ある場合はfalse
+			if isTableHeader(prevline, l) {
 				inTable = true
 				start = pos - len(l) - prevlen
 			} else {
@@ -138,7 +156,44 @@ func (t *TableWriter) findSegment(fp io.Reader) {
 	log.Debugf("start: %d, end: %d", start, end)
 }
 
+func isTableHeader(header string, delim string) bool {
+	return len(strings.Split(trimPipe(header), "|")) <= len(strings.Split(trimPipe(delim), "|"))
+}
+
+func isCodeFence(s string) bool {
+	return fencedCodeBlock.MatchString(s)
+}
+
+func isThematicBreak(s string) bool {
+	return thematicBreak.MatchString(s)
+}
+
+func isNewLine(s string) bool {
+	return s == ""
+}
+func matchDelimiter(s string) bool {
+	// TODO: prefixのスペース問題
+	// スペースが4つ以上の場合は捨てる
+	delim, _, _ := strings.Cut(
+		trimPipe(prefixSpace.ReplaceAllString(s, "")), "|")
+
+	if tableDelimLeft.MatchString(delim) ||
+		tableDelimRight.MatchString(delim) ||
+		tableDelimCenter.MatchString(delim) {
+		return true
+	}
+	if tableDelimNone.MatchString(delim) && strings.Contains(s, "|") {
+		return true
+	}
+
+	return false
+}
+
 func trimPipe(l string) string {
+	if len(l) == 0 {
+		return l
+	}
+	// spaceをtrimする
 	if l[0] == '|' {
 		l = l[1:]
 	}

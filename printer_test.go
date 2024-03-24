@@ -6,7 +6,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/charmbracelet/log"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -40,13 +39,17 @@ func TestReplaceTable(t *testing.T) {
 		{
 			name: "Test Case 1",
 			src:  "testdata/replace01.md",
-			wnt:  "testdata/replace_want01.md",
+			wnt:  "testdata/replace01_want.md",
 		},
-		// Add more test cases here
 		{
 			name: "Test Case 2",
 			src:  "testdata/replace02.md",
-			wnt:  "testdata/replace_want02.md",
+			wnt:  "testdata/replace02_want.md",
+		},
+		{
+			name: "Test Case 3",
+			src:  "testdata/replace03.md",
+			wnt:  "testdata/replace03_want.md",
 		},
 	}
 
@@ -73,7 +76,6 @@ func testUtilReplaceTable(src, wnt string) ([]byte, []byte) {
 	tw.render(m.table)
 	got := tw.replaceTable(fp)
 
-	log.Debug(string(got))
 	fp2, _ := os.Open(wnt)
 	defer fp2.Close()
 	want, _ := io.ReadAll(fp2)

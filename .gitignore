@@ -4,4 +4,4 @@ dist/
 
 debug.log
 .vscode/
-./test.md
+test.md

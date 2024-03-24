@@ -11,9 +11,10 @@ echo 'foobar' \
 fzf --height 40% --layout reverse --info inline --border
 ```
 
-| foo | bar |
-| --- | --- |
-| baz | bim |
+| foo   | bar  | zoo |
+| ----- | ---- | --- |
+| bazoo | bim  |     |
+|       | TEST |     |
 ----
 
 Header
