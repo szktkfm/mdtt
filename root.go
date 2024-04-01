@@ -91,6 +91,7 @@ func WithMDFile(fpath string) func(*Model) {
 			WithTables(tables),
 		)
 		m.table = tables[0]
+		m.choose = 0
 		m.list = list
 		m.tables = tables
 		if len(tables) == 1 {

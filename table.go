@@ -260,9 +260,9 @@ func WithKeyMap(km KeyMap) Option {
 // Update is the Bubble Tea update loop.
 func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 	var cmds []tea.Cmd
-	if !m.focus {
-		return m, nil
-	}
+	// if !m.focus {
+	// 	return m, nil
+	// }
 
 	switch m.mode {
 	case NORMAL, HEADER:
@@ -282,9 +282,9 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 			case key.Matches(msg, m.KeyMap.Left):
 				m.MoveLeft(1)
 			case key.Matches(msg, m.KeyMap.AddRowCol):
-				if m.mode == HEADER {
-					return m, nil
-				}
+				// if m.mode == HEADER {
+				// 	return m, nil
+				// }
 				m.AddEmpty()
 				m.switchMode(INSERT)
 				// m.rows[m.cursor.y][m.cursor.x].Update(msg)
@@ -380,6 +380,9 @@ func (m TableModel) UpdateWidth(msg WidthMsg) {
 }
 
 func (m *TableModel) Copy() {
+	if len(m.rows) == 0 {
+		return
+	}
 	//TODO
 	// Rowのコピーだけを考える。今のところ
 	var row Row
@@ -481,19 +484,33 @@ func (m *TableModel) AddEmpty() {
 	for i := range m.cols {
 		newRow[i] = NewCell("")
 	}
-	m.insertRow(m.cursor.y+1, newRow)
+
+	if m.mode == HEADER || len(m.rows) == 0 {
+		m.insertRow(0, newRow)
+	} else {
+		m.insertRow(m.cursor.y+1, newRow)
+	}
 	m.SetHeight(len(m.rows))
 	m.MoveDown(1)
 }
 
 func (m *TableModel) Del() tea.Cmd {
 	if m.prevKey == "d" {
-		m.deleteRow(m.cursor.y)
+		if len(m.rows) == 0 {
+			return nil
+		}
+
+		m.deleteRow(clamp(m.cursor.y, 0, len(m.rows)-1))
+		m.cursor.y = clamp(m.cursor.y, 0, len(m.rows)-1)
 		m.SetHeight(len(m.rows))
 		m.UpdateViewport()
 		return clearPrevKeyCmd()
 	} else if m.prevKey == "v" {
+		if len(m.cols) == 0 {
+			return nil
+		}
 		m.deleteColumn(m.cursor.x)
+		m.cursor.x = clamp(m.cursor.x, 0, len(m.cols)-1)
 		m.UpdateViewport()
 	}
 
