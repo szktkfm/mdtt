@@ -1,12 +1,14 @@
 package main
 
 import (
+	"io"
 	"os"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
+	"github.com/mattn/go-isatty"
 	"github.com/muesli/termenv"
 	"github.com/spf13/cobra"
 	"github.com/szktkfm/mdtt"
@@ -18,8 +20,8 @@ var (
 	Date    = ""
 	BuiltBy = ""
 	rootCmd = &cobra.Command{
-		Use:     "gh dash",
-		Short:   "A gh extension that shows a configurable dashboard of pull requests and issues.",
+		Use:     "mdtt [file]",
+		Short:   "Markdown Table Editor with TUI",
 		Version: "",
 		Run: func(cmd *cobra.Command, args []string) {
 			debug, err := cmd.Flags().GetBool("debug")
@@ -36,17 +38,7 @@ var (
 			if inplace && len(args) == 0 {
 				log.Fatal("no input files")
 			}
-
-			var model mdtt.Model
-			if len(args) == 0 {
-				model = mdtt.NewRoot()
-
-			} else {
-				model = mdtt.NewRoot(
-					mdtt.WithMDFile(args[0]),
-					mdtt.WithInplace(inplace),
-				)
-			}
+			var model = createModel(args, inplace)
 
 			p := tea.NewProgram(
 				model,
@@ -61,6 +53,35 @@ var (
 		},
 	}
 )
+
+func createModel(args []string, inplace bool) mdtt.Model {
+
+	var model mdtt.Model
+
+	if !isatty.IsTerminal(os.Stdin.Fd()) {
+
+		content, _ := io.ReadAll(os.Stdin)
+		model = mdtt.NewRoot(
+			mdtt.WithMarkdown(content),
+		)
+
+	} else if len(args) == 0 {
+
+		model = mdtt.NewRoot()
+
+	} else {
+		f, _ := os.Open(args[0])
+		defer f.Close()
+		content, _ := io.ReadAll(f)
+		model = mdtt.NewRoot(
+			mdtt.WithMarkdown(content),
+			mdtt.WithInplace(inplace),
+			mdtt.WithFilePath(args[0]),
+		)
+	}
+
+	return model
+}
 
 func Execute() {
 	err := rootCmd.Execute()

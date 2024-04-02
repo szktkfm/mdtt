@@ -2,11 +2,8 @@ package mdtt
 
 import (
 	"bytes"
-	"io"
-	"os"
 
 	"github.com/charmbracelet/log"
-	"github.com/muesli/termenv"
 	"github.com/yuin/goldmark"
 	east "github.com/yuin/goldmark-emoji/ast"
 	"github.com/yuin/goldmark/ast"
@@ -32,17 +29,13 @@ type Table struct {
 	cols []string
 }
 
-func parse(file string) []TableModel {
-	f, _ := os.Open(file)
-	defer f.Close()
-	s, _ := io.ReadAll(f)
-
+func parse(s []byte) []TableModel {
 	md := goldmark.New(
 		goldmark.WithExtensions(extension.GFM),
 		goldmark.WithExtensions(extension.Table),
 	)
 
-	builder := NewModelBuilder(Options{})
+	builder := NewModelBuilder()
 
 	md.SetRenderer(
 		renderer.NewRenderer(
@@ -52,17 +45,11 @@ func parse(file string) []TableModel {
 		),
 	)
 
-	// Convert markdown to HTML
-	var buf bytes.Buffer
-	md.Convert(s, &buf)
+	var _buf bytes.Buffer
+	md.Convert(s, &_buf)
 
-	log.Debug("rows", "rows", builder.rows)
-	log.Debug("cols", "cols", builder.cols)
+	return builder.build()
 
-	// table.WithHeight(7),
-	m := builder.build()
-
-	return m
 }
 
 func (b *ModelBuilder) build() []TableModel {
@@ -100,16 +87,8 @@ func (b *ModelBuilder) build() []TableModel {
 	return models
 }
 
-// Options is used to configure an ANSIRenderer.
-type Options struct {
-	BaseURL          string
-	WordWrap         int
-	PreserveNewLines bool
-	ColorProfile     termenv.Profile
-}
-
 // NewModelBuilder returns a new ANSIRenderer with style and options set.
-func NewModelBuilder(options Options) *ModelBuilder {
+func NewModelBuilder() *ModelBuilder {
 	var buf []byte
 	return &ModelBuilder{
 		buf: bytes.NewBuffer(buf),

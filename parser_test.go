@@ -1,6 +1,8 @@
 package mdtt
 
 import (
+	"io"
+	"os"
 	"testing"
 )
 
@@ -30,7 +32,10 @@ func TestParse(t *testing.T) {
 		WithNaiveRows(rows2),
 	)
 
-	got := parse("testdata/01.md")
+	f, _ := os.Open("testdata/01.md")
+	defer f.Close()
+	s, _ := io.ReadAll(f)
+	got := parse(s)
 
 	if !isEqualTables(want1, got[0]) {
 		t.Error("Table value is mismatch")

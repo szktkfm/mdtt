@@ -10,16 +10,6 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-var (
-	// titleStyle        = lipgloss.NewStyle().MarginLeft(2)
-	itemStyle         = lipgloss.NewStyle().PaddingLeft(2)
-	selectedItemStyle = lipgloss.NewStyle().
-				PaddingLeft(0).
-				Foreground(lipgloss.Color("170"))
-	paginationStyle = list.DefaultStyles().PaginationStyle.PaddingLeft(4)
-	helpStyle       = list.DefaultStyles().HelpStyle.PaddingLeft(4).PaddingBottom(1)
-)
-
 type item string
 
 type SelectMsg struct {
@@ -47,10 +37,10 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 
 	str := string(i)
 
-	fn := itemStyle.Render
+	fn := listItemStyle.Render
 	if index == m.Index() {
 		fn = func(s ...string) string {
-			return selectedItemStyle.Render("  " +
+			return listSelectedItemStyle.Render("  " +
 				strings.Replace(
 					strings.Replace(strings.Join(s, " "), "\n", "\n  ", -1),
 					"\n ", "\n>", 1))
@@ -101,8 +91,8 @@ func NewList(opts ...func(*ListModel)) ListModel {
 	l.SetShowFilter(false)
 	l.SetShowHelp(false)
 	l.SetShowTitle(false)
-	l.Styles.PaginationStyle = paginationStyle
-	l.Styles.HelpStyle = helpStyle
+	l.Styles.PaginationStyle = listPaginationStyle
+	l.Styles.HelpStyle = listHelpStyle
 
 	m := ListModel{list: l}
 
@@ -122,11 +112,6 @@ func WithItems(items []list.Item) func(*ListModel) {
 	}
 }
 
-var headerStyle = lipgloss.NewStyle().Bold(true).Padding(0, 2).
-	Border(lipgloss.NormalBorder(), true, false, true, false).
-	BorderForeground(lipgloss.Color("240")).
-	Foreground(lipgloss.Color("249"))
-
 func WithTables(tables []TableModel) func(*ListModel) {
 	return func(m *ListModel) {
 		var items []list.Item
@@ -134,10 +119,10 @@ func WithTables(tables []TableModel) func(*ListModel) {
 			var header []string
 			for _, c := range t.cols {
 				header = append(header,
-					headerStyle.Render(c.Title.Value()))
+					listHeaderStyle.Render(c.Title.Value()))
 			}
 			header = append(header,
-				headerStyle.Render("…"))
+				listHeaderStyle.Render("…"))
 
 			items = append(items, item(lipgloss.JoinHorizontal(lipgloss.Left, header...)))
 		}

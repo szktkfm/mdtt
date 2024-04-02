@@ -18,8 +18,6 @@ type Element struct {
 func (tr *ModelBuilder) NewElement(node ast.Node, source []byte) Element {
 
 	switch node.Kind() {
-	// case ast.KindEmphasis:
-	// 	return Element{}
 
 	// case ast.KindLink:
 	// 	return Element{}
@@ -40,7 +38,6 @@ func (tr *ModelBuilder) NewElement(node ast.Node, source []byte) Element {
 		return Element{}
 
 	case ast.KindCodeSpan:
-		// n := node.(*ast.CodeSpan)
 		return Element{
 			Renderer: func(b *bytes.Buffer) {
 				b.WriteString("`")
@@ -51,7 +48,6 @@ func (tr *ModelBuilder) NewElement(node ast.Node, source []byte) Element {
 		}
 
 	case ast.KindEmphasis:
-		// n := node.(*ast.CodeSpan)
 		n := node.(*ast.Emphasis)
 		return Element{
 			Renderer: func(b *bytes.Buffer) {
@@ -112,14 +108,6 @@ func (tr *ModelBuilder) NewElement(node ast.Node, source []byte) Element {
 			},
 		}
 
-	// return Element{
-	// 	Renderer: &BaseElement{
-	// 		Token: string(n.Value.Unicode),
-	// 	},
-	// }
-	// return Element{}
-
-	// Unknown case
 	default:
 		return Element{
 			Renderer: func(b *bytes.Buffer) {
@@ -128,5 +116,4 @@ func (tr *ModelBuilder) NewElement(node ast.Node, source []byte) Element {
 			},
 		}
 	}
-	// return Element{}
 }

@@ -2,7 +2,6 @@ package mdtt
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 // Enum of Mode
@@ -15,9 +14,6 @@ const (
 
 var (
 	defaultHeight = 2
-	baseStyle     = lipgloss.NewStyle().
-			BorderStyle(lipgloss.NormalBorder()).
-			BorderForeground(lipgloss.Color("240"))
 )
 
 type Model struct {
@@ -80,9 +76,10 @@ func NewRoot(opts ...func(*Model)) Model {
 	return m
 }
 
-func WithMDFile(fpath string) func(*Model) {
+func WithMarkdown(b []byte) func(*Model) {
 	return func(m *Model) {
-		tables := parse(fpath)
+
+		tables := parse(b)
 		list := NewList(
 			WithTables(tables),
 		)
@@ -95,7 +92,12 @@ func WithMDFile(fpath string) func(*Model) {
 		} else {
 			m.preview = true
 		}
-		m.fpath = fpath
+	}
+}
+
+func WithFilePath(f string) func(*Model) {
+	return func(m *Model) {
+		m.fpath = f
 	}
 }
 

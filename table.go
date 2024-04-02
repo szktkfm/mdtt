@@ -7,7 +7,6 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/log"
 )
 
 // TableModel defines a state for the table widget.
@@ -163,16 +162,9 @@ type Styles struct {
 // DefaultStyles returns a set of default style definitions for this table.
 func DefaultStyles() Styles {
 	return Styles{
-		Selected: lipgloss.NewStyle().Bold(true).
-			Foreground(lipgloss.Color("17")).
-			Background(lipgloss.Color("4")),
-		Header: lipgloss.NewStyle().Bold(true).Padding(0, 1).
-			BorderStyle(lipgloss.NormalBorder()).
-			BorderForeground(lipgloss.Color("240")).
-			BorderBottom(true).
-			Bold(false),
-
-		Cell: lipgloss.NewStyle().Padding(0, 1),
+		Selected: tableSelectedStyle,
+		Header:   tableHeaderStyle,
+		Cell:     tableCellStyle,
 	}
 }
 
@@ -672,7 +664,6 @@ func (m *TableModel) renderRow(rowID int) string {
 		style := lipgloss.NewStyle().
 			Width(m.cols[i].Width).
 			MaxWidth(m.cols[i].Width)
-			// Inline(true)
 
 		var renderedCell string
 		isSelected := i == m.cursor.x &&
@@ -684,10 +675,8 @@ func (m *TableModel) renderRow(rowID int) string {
 		var value string
 		if isInsertMode && isSelected {
 			value = cell.View()
-			log.Debug("インサート", "test", value)
 		} else {
 			value = cell.Value()
-			// log.Debug("", "test", value)
 		}
 
 		if isSelected {

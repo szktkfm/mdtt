@@ -83,20 +83,24 @@ func TestReplaceTable(t *testing.T) {
 
 func testUtilReplaceTable(src, wnt string, idx int) ([]byte, []byte) {
 	tw := TableWriter{}
-	fp, _ := os.Open(src)
-	defer fp.Close()
+	fpSrc, _ := os.Open(src)
+	defer fpSrc.Close()
 
+	fp_, _ := os.Open(wnt)
+	defer fp_.Close()
+	md, _ := io.ReadAll(fp_)
 	m := NewRoot(
-		WithMDFile(wnt),
+		WithMarkdown(md),
+		WithFilePath(wnt),
 	)
 	m.table = m.tables[idx]
 	m.choose = idx
 
 	tw.render(m.table)
-	got := tw.replaceTable(fp, idx)
+	got := tw.replaceTable(fpSrc, idx)
 
-	fp2, _ := os.Open(wnt)
-	defer fp2.Close()
-	want, _ := io.ReadAll(fp2)
+	fpWnt, _ := os.Open(wnt)
+	defer fpWnt.Close()
+	want, _ := io.ReadAll(fpWnt)
 	return got, want
 }
