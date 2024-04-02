@@ -202,17 +202,8 @@ func trimLeadingSpace(s string) string {
 	return prefixIgnoreSpace.ReplaceAllString(s, "")
 }
 
-func trimPipe(l string) string {
-	if len(l) == 0 {
-		return l
-	}
-	if l[0] == '|' {
-		l = l[1:]
-	}
-	if l[len(l)-1] == '|' {
-		l = l[:len(l)-1]
-	}
-	return l
+func trimPipe(s string) string {
+	return strings.Trim(s, "|")
 }
 
 func trimSpace(s string) string {
