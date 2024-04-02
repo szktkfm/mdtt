@@ -10,7 +10,8 @@ import (
 )
 
 func TestFindSegment(t *testing.T) {
-	tw := TableWriter{}
+
+	tl := tableLocator{}
 
 	md := `# Title
 | foo | bar |
@@ -18,9 +19,9 @@ func TestFindSegment(t *testing.T) {
 | baz | bim |
 `
 	b := bytes.NewBuffer([]byte(md))
-	tw.findSegment(b)
-	got := tw.seg
-	want := TableSegment{
+	tl.findLocations(b)
+	got := tl.locs[0]
+	want := TableLocation{
 		Start: 9,
 		End:   50,
 	}
@@ -50,7 +51,7 @@ func TestReplaceTable(t *testing.T) {
 			wnt:  "testdata/replace02_want.md",
 		},
 		{
-			name: "Test Case 3",
+			name: "fenced code block",
 			src:  "testdata/replace03.md",
 			idx:  0,
 			wnt:  "testdata/replace03_want.md",
@@ -60,6 +61,12 @@ func TestReplaceTable(t *testing.T) {
 			src:  "testdata/replace04.md",
 			idx:  1,
 			wnt:  "testdata/replace04_want.md",
+		},
+		{
+			name: "Test Case 5",
+			src:  "testdata/replace05.md",
+			idx:  0,
+			wnt:  "testdata/replace05_want.md",
 		},
 	}
 

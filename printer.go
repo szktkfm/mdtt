@@ -12,12 +12,17 @@ import (
 )
 
 type TableWriter struct {
-	// segをフィールドに持つ必要ないのでは
-	segs []TableSegment
-	seg  TableSegment
 	text string
 }
-type TableSegment struct {
+
+type tableLocator struct {
+	locs        []TableLocation
+	inTable     bool
+	codeFence   string
+	inCodeBlock bool
+}
+
+type TableLocation struct {
 	Start int
 	End   int
 }
@@ -33,6 +38,7 @@ func Write(m Model) {
 		defer fp.Close()
 
 		b := tw.replaceTable(fp, m.choose)
+
 		os.WriteFile(m.fpath, b, 0644)
 
 	} else {
@@ -70,26 +76,29 @@ func (t *TableWriter) render(m TableModel) {
 }
 
 func (t *TableWriter) replaceTable(fp *os.File, idx int) []byte {
-	t.findSegment(fp)
+
+	tl := tableLocator{}
+	tl.findLocations(fp)
+
 	fp.Seek(0, 0)
 	b, _ := io.ReadAll(fp)
-	b = append(b[:t.segs[idx].Start-1],
-		append([]byte(t.text), b[t.segs[idx].End:]...)...)
+	b = append(b[:tl.locs[idx].Start-1],
+		append([]byte(t.text), b[tl.locs[idx].End:]...)...)
 	return b
 }
 
 var (
-	tableDelimLeft   = regexp.MustCompile(`^\s*\:\-+\s*$`)
-	tableDelimRight  = regexp.MustCompile(`^\s*\-+\:\s*$`)
-	tableDelimCenter = regexp.MustCompile(`^\s*\:\-+\:\s*$`)
-	tableDelimNone   = regexp.MustCompile(`^\s*\-+\s*$`)
-	thematicBreak    = regexp.MustCompile(`^\s{0,3}((-\s*){3,}|(\*\s*){3,}|(_\s*){3,})\s*$`)
-	prefixSpace      = regexp.MustCompile(`^\s{0,3}`)
-	// prefixSpace      = regexp.MustCompile(`^\s{0,3}`)
-	fencedCodeBlock = regexp.MustCompile("^```|~~~.*$")
+	tableDelimLeft    = regexp.MustCompile(`^\s*\:\-+\s*$`)
+	tableDelimRight   = regexp.MustCompile(`^\s*\-+\:\s*$`)
+	tableDelimCenter  = regexp.MustCompile(`^\s*\:\-+\:\s*$`)
+	tableDelimNone    = regexp.MustCompile(`^\s*\-+\s*$`)
+	thematicBreak     = regexp.MustCompile(`^\s{0,3}((-\s*){3,}|(\*\s*){3,}|(_\s*){3,})\s*$`)
+	prefixIgnoreSpace = regexp.MustCompile(`^\s{0,3}`)
+	fencedCodeBlock   = regexp.MustCompile("^```|~~~.*$")
+	codeIndent        = regexp.MustCompile(`^\s{4,}`)
 )
 
-func (t *TableWriter) findSegment(fp io.Reader) {
+func (tl *tableLocator) findLocations(fp io.Reader) {
 	scanner := bufio.NewScanner(fp)
 
 	var (
@@ -97,89 +106,65 @@ func (t *TableWriter) findSegment(fp io.Reader) {
 		prevline string
 		pos      int
 		start    int
-		end      int
 	)
 
-	var (
-		inTable     bool
-		inCodeBlock bool
-	)
-
-	var segs []TableSegment
 	for scanner.Scan() {
 		l := scanner.Text()
 
-		// TODO: ```で始まって ~~~で閉じている場合
-		if isCodeFence(l) {
-			inCodeBlock = !inCodeBlock
+		if tl.isCodeFence(l) {
+			tl.inCodeBlock = !tl.inCodeBlock
+			tl.codeFence = trimSpace(l)
 		}
 
-		if inTable {
-			if isNewLine(l) || isThematicBreak(l) {
-				inTable = false
-				end = pos
-				segs = append(segs, TableSegment{Start: start, End: pos})
+		if tl.inTable {
+			if isBlankLine(l) || isThematicBreak(l) {
+				tl.inTable = false
+				tl.locs = append(tl.locs, TableLocation{Start: start, End: pos})
 			}
 		}
 
-		if inCodeBlock {
-			pos += len(l) + 1
+		pos += len(l) + 1
+
+		if tl.inCodeBlock {
 			prevline = l
 			prevlen = len(l) + 1
 			continue
 		}
 
-		pos += len(l) + 1
-		if isTableDelimiter(l) {
-			// header check
-			if isNewLine(prevline) {
-				continue
-			}
-
-			// spaceがprefixに四つ以上ある場合はfalse
-			if isTableHeader(prevline, l) {
-				inTable = true
-				start = pos - len(l) - prevlen
-			} else {
-				continue
-			}
-
+		if isTableDelimiter(l) && isTableHeader(prevline, l) {
+			tl.inTable = true
+			start = pos - len(l) - prevlen
 		}
+
 		prevline = l
 		prevlen = len(l) + 1
 	}
-	if inTable {
-		segs = append(segs, TableSegment{Start: start, End: pos})
-		end = pos
+	if tl.inTable {
+		tl.locs = append(tl.locs, TableLocation{Start: start, End: pos})
 	}
-
-	// TODO: listで返す
-	log.Debug(t)
-	t.seg = TableSegment{Start: start, End: end}
-	t.segs = segs
-	log.Debugf("start: %d, end: %d", start, end)
 }
 
 func isTableHeader(header string, delim string) bool {
-	return len(strings.Split(trimPipe(header), "|")) <= len(strings.Split(trimPipe(delim), "|"))
+	if isBlankLine(header) {
+		return false
+	}
+	if isCodeIndent(header) {
+		return false
+	}
+	return len(strings.Split(
+		trimPipe(trimLeadingSpace(header)), "|")) <=
+		len(strings.Split(
+			trimPipe(trimLeadingSpace(delim)), "|"))
 }
 
-func isCodeFence(s string) bool {
-	return fencedCodeBlock.MatchString(s)
-}
-
-func isThematicBreak(s string) bool {
-	return thematicBreak.MatchString(s)
-}
-
-func isNewLine(s string) bool {
-	return s == ""
-}
 func isTableDelimiter(s string) bool {
-	// TODO: prefixのスペース問題
-	// スペースが4つ以上の場合は捨てる
+
+	if isCodeIndent(s) {
+		return false
+	}
+
 	delim, _, _ := strings.Cut(
-		trimPipe(prefixSpace.ReplaceAllString(s, "")), "|")
+		trimPipe(trimLeadingSpace(s)), "|")
 
 	if tableDelimLeft.MatchString(delim) ||
 		tableDelimRight.MatchString(delim) ||
@@ -193,11 +178,34 @@ func isTableDelimiter(s string) bool {
 	return false
 }
 
+func (tl *tableLocator) isCodeFence(s string) bool {
+	if !tl.inCodeBlock {
+		return fencedCodeBlock.MatchString(s)
+	} else {
+		return strings.HasPrefix(tl.codeFence, trimSpace(s))
+	}
+}
+
+func isCodeIndent(s string) bool {
+	return codeIndent.MatchString(s)
+}
+
+func isThematicBreak(s string) bool {
+	return thematicBreak.MatchString(s)
+}
+
+func isBlankLine(s string) bool {
+	return s == ""
+}
+
+func trimLeadingSpace(s string) string {
+	return prefixIgnoreSpace.ReplaceAllString(s, "")
+}
+
 func trimPipe(l string) string {
 	if len(l) == 0 {
 		return l
 	}
-	// spaceをtrimする
 	if l[0] == '|' {
 		l = l[1:]
 	}
@@ -205,4 +213,8 @@ func trimPipe(l string) string {
 		l = l[:len(l)-1]
 	}
 	return l
+}
+
+func trimSpace(s string) string {
+	return strings.TrimSpace(s)
 }
