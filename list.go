@@ -50,8 +50,10 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 	fn := itemStyle.Render
 	if index == m.Index() {
 		fn = func(s ...string) string {
-			return selectedItemStyle.Render("> " +
-				strings.Replace(strings.Join(s, " "), "\n", "\n  ", -1))
+			return selectedItemStyle.Render("  " +
+				strings.Replace(
+					strings.Replace(strings.Join(s, " "), "\n", "\n  ", -1),
+					"\n ", "\n>", 1))
 		}
 	}
 

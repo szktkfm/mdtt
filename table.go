@@ -297,12 +297,8 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 			case key.Matches(msg, m.KeyMap.Left):
 				m.MoveLeft(1)
 			case key.Matches(msg, m.KeyMap.AddRowCol):
-				// if m.mode == HEADER {
-				// 	return m, nil
-				// }
 				m.AddEmpty()
 				m.switchMode(INSERT)
-				// m.rows[m.cursor.y][m.cursor.x].Update(msg)
 
 			case key.Matches(msg, m.KeyMap.DelRowCol):
 				if m.mode == HEADER {

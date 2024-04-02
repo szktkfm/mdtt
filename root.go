@@ -40,7 +40,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.choose = msg.idx
 		m.table = m.tables[msg.idx]
 	case QuitMsg:
-		// insertモードでもないのにqが押されたら終了してしまう
 		if !m.preview {
 			Write(m)
 		}
