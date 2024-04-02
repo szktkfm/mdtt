@@ -47,6 +47,14 @@ type Column struct {
 
 type Register interface{}
 
+type QuitMsg struct{}
+
+func quitCmd() tea.Cmd {
+	return func() tea.Msg {
+		return QuitMsg{}
+	}
+}
+
 // KeyMap defines keybindings. It satisfies to the help.KeyMap interface, which
 // is used to render the menu.
 type KeyMap struct {
@@ -66,6 +74,7 @@ type KeyMap struct {
 	GotoBottom   key.Binding
 	InsertMode   key.Binding
 	NormalMode   key.Binding
+	Quit         key.Binding
 }
 
 // DefaultKeyMap returns a default set of keybindings.
@@ -135,6 +144,10 @@ func DefaultKeyMap() KeyMap {
 		NormalMode: key.NewBinding(
 			key.WithKeys("esc", "ctrl+c"),
 			key.WithHelp("esc/ctrl-c", "normal mode"),
+		),
+		Quit: key.NewBinding(
+			key.WithKeys("q"),
+			key.WithHelp("q", "quit"),
 		),
 	}
 }
@@ -273,6 +286,8 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 			m.prevKey = ""
 		case tea.KeyMsg:
 			switch {
+			case key.Matches(msg, m.KeyMap.Quit):
+				return m, quitCmd()
 			case key.Matches(msg, m.KeyMap.LineUp):
 				m.MoveUp(1)
 			case key.Matches(msg, m.KeyMap.LineDown):

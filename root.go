@@ -35,19 +35,16 @@ func (m Model) Init() tea.Cmd { return nil }
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "q":
-			// insertモードでもないのにqが押されたら終了してしまう
-			if !m.preview {
-				Write(m)
-			}
-			return m, tea.Quit
-		}
 	case SelectMsg:
 		m.preview = false
 		m.choose = msg.idx
 		m.table = m.tables[msg.idx]
+	case QuitMsg:
+		// insertモードでもないのにqが押されたら終了してしまう
+		if !m.preview {
+			Write(m)
+		}
+		return m, tea.Quit
 	}
 
 	if m.preview {
