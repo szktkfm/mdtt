@@ -32,7 +32,7 @@ func Write(m Model) {
 		}
 		defer fp.Close()
 
-		b := tw.replaceTable(fp)
+		b := tw.replaceTable(fp, m.choose)
 		os.WriteFile(m.fpath, b, 0644)
 
 	} else {
@@ -69,12 +69,12 @@ func (t *TableWriter) render(m TableModel) {
 	t.text = sb.String()
 }
 
-func (t *TableWriter) replaceTable(fp *os.File) []byte {
+func (t *TableWriter) replaceTable(fp *os.File, idx int) []byte {
 	t.findSegment(fp)
 	fp.Seek(0, 0)
 	b, _ := io.ReadAll(fp)
-	b = append(b[:t.seg.Start-1],
-		append([]byte(t.text), b[t.seg.End:]...)...)
+	b = append(b[:t.segs[idx].Start-1],
+		append([]byte(t.text), b[t.segs[idx].End:]...)...)
 	return b
 }
 
@@ -105,6 +105,7 @@ func (t *TableWriter) findSegment(fp io.Reader) {
 		inCodeBlock bool
 	)
 
+	var segs []TableSegment
 	for scanner.Scan() {
 		l := scanner.Text()
 
@@ -117,6 +118,7 @@ func (t *TableWriter) findSegment(fp io.Reader) {
 			if isNewLine(l) || isThematicBreak(l) {
 				inTable = false
 				end = pos
+				segs = append(segs, TableSegment{Start: start, End: pos})
 			}
 		}
 
@@ -128,7 +130,7 @@ func (t *TableWriter) findSegment(fp io.Reader) {
 		}
 
 		pos += len(l) + 1
-		if matchDelimiter(l) {
+		if isTableDelimiter(l) {
 			// header check
 			if isNewLine(prevline) {
 				continue
@@ -147,12 +149,14 @@ func (t *TableWriter) findSegment(fp io.Reader) {
 		prevlen = len(l) + 1
 	}
 	if inTable {
+		segs = append(segs, TableSegment{Start: start, End: pos})
 		end = pos
 	}
 
 	// TODO: listで返す
 	log.Debug(t)
 	t.seg = TableSegment{Start: start, End: end}
+	t.segs = segs
 	log.Debugf("start: %d, end: %d", start, end)
 }
 
@@ -171,7 +175,7 @@ func isThematicBreak(s string) bool {
 func isNewLine(s string) bool {
 	return s == ""
 }
-func matchDelimiter(s string) bool {
+func isTableDelimiter(s string) bool {
 	// TODO: prefixのスペース問題
 	// スペースが4つ以上の場合は捨てる
 	delim, _, _ := strings.Cut(
