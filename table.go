@@ -8,6 +8,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
+	"github.com/mattn/go-runewidth"
 )
 
 // TableModel defines a state for the table widget.
@@ -380,17 +381,18 @@ func (m *TableModel) switchMode(mode int) {
 }
 
 func (m TableModel) UpdateWidth(msg WidthMsg) {
-	// insert modeの場合
-	log.Debug(msg.width)
-	m.cols[m.cursor.x].Width = max(msg.width, m.cols[m.cursor.x].Width)
+	maxWidth := msg.width
+	for _, r := range m.rows {
+		maxWidth = max(runewidth.StringWidth(r[m.cursor.x].Value())+2, maxWidth)
+	}
+	maxWidth = max(runewidth.StringWidth(m.cols[m.cursor.x].Title.Value())+2, maxWidth)
+	m.cols[m.cursor.x].Width = maxWidth
 }
 
 func (m *TableModel) Copy() {
 	if len(m.rows) == 0 {
 		return
 	}
-	//TODO
-	// Rowのコピーだけを考える。今のところ
 	var row Row
 	for _, cell := range m.rows[m.cursor.y] {
 		row = append(row, NewCell(cell.Value()))
@@ -399,8 +401,6 @@ func (m *TableModel) Copy() {
 }
 
 func (m *TableModel) Paste() {
-	//TODO
-	// Rowのペーストだけを考える。今のところ
 	if m.register != nil {
 		m.insertRow(m.cursor.y+1, m.register.(Row))
 
