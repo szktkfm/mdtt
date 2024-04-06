@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/log"
 )
 
 // TableModel defines a state for the table widget.
@@ -379,6 +380,8 @@ func (m *TableModel) switchMode(mode int) {
 }
 
 func (m TableModel) UpdateWidth(msg WidthMsg) {
+	// insert modeの場合
+	log.Debug(msg.width)
 	m.cols[m.cursor.x].Width = max(msg.width, m.cols[m.cursor.x].Width)
 }
 
@@ -595,6 +598,7 @@ func (m *TableModel) MoveUp(n int) {
 func (m *TableModel) MoveDown(n int) {
 	if m.cursor.y == 0 && m.mode == HEADER {
 		m.switchMode(NORMAL)
+		m.UpdateViewport()
 		return
 	}
 
@@ -642,7 +646,9 @@ func (m TableModel) headersView() string {
 	for i, col := range m.cols {
 		var style lipgloss.Style
 		if i == m.cursor.x && m.mode == HEADER {
-			style = m.styles.Selected.PaddingRight(col.Width - len(col.Title.Value()))
+			style = m.styles.Selected.
+				Copy().
+				PaddingRight(col.Width - len(col.Title.Value()))
 		} else {
 			style = lipgloss.NewStyle().Width(col.Width).MaxWidth(col.Width).Inline(true)
 		}
@@ -680,8 +686,11 @@ func (m *TableModel) renderRow(rowID int) string {
 		}
 
 		if isSelected {
+			log.Debug("selected", value)
 			renderedCell = m.styles.Selected.Render(style.Render(value))
+			log.Debug("renderd cell", renderedCell)
 		} else {
+			log.Debug("not selected", value)
 			renderedCell = m.styles.Cell.Render(style.Render(value))
 		}
 
