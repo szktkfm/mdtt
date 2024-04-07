@@ -10,6 +10,10 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+var (
+	headerWidth = 30
+)
+
 type item string
 
 type SelectMsg struct {
@@ -40,10 +44,8 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 	fn := listItemStyle.Render
 	if index == m.Index() {
 		fn = func(s ...string) string {
-			return listSelectedItemStyle.Render("  " +
-				strings.Replace(
-					strings.Replace(strings.Join(s, " "), "\n", "\n  ", -1),
-					"\n ", "\n>", 1))
+			return listSelectedItemStyle.Render("> " +
+				strings.Replace(strings.Join(s, " "), "\n", "\n  ", -1))
 		}
 	}
 
@@ -77,7 +79,7 @@ func (m ListModel) Update(msg tea.Msg) (ListModel, tea.Cmd) {
 }
 
 func (m ListModel) View() string {
-	return m.list.View()
+	return "\n" + m.list.View()
 }
 
 func NewList(opts ...func(*ListModel)) ListModel {
@@ -116,15 +118,13 @@ func WithTables(tables []TableModel) func(*ListModel) {
 	return func(m *ListModel) {
 		var items []list.Item
 		for _, t := range tables {
-			var header []string
+			var headerCells []string
 			for _, c := range t.cols {
-				header = append(header,
-					listHeaderStyle.Render(c.Title.Value()))
+				headerCells = append(headerCells, strings.Repeat(" ", 4)+c.Title.Value())
 			}
-			header = append(header,
-				listHeaderStyle.Render("…"))
-
-			items = append(items, item(lipgloss.JoinHorizontal(lipgloss.Left, header...)))
+			header := lipgloss.JoinHorizontal(lipgloss.Left, headerCells...)
+			header = PadOrTruncate(header, headerWidth) + " …"
+			items = append(items, item(listHeaderStyle.Render(header)))
 		}
 		m.list.SetItems(items)
 	}

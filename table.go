@@ -320,6 +320,9 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 			case key.Matches(msg, m.KeyMap.GotoBottom):
 				m.GotoBottom()
 			case key.Matches(msg, m.KeyMap.InsertMode):
+				if len(m.cols) == 0 {
+					return m, nil
+				}
 				if m.mode == HEADER {
 					m.switchMode(HEADER_INSERT)
 				} else {
@@ -503,8 +506,9 @@ func (m *TableModel) Del() tea.Cmd {
 	if m.prevKey == "d" {
 		if len(m.rows) == 0 {
 			return nil
+		} else if len(m.rows) == 1 {
+			m.switchMode(HEADER)
 		}
-
 		m.deleteRow(clamp(m.cursor.y, 0, len(m.rows)-1))
 		m.cursor.y = clamp(m.cursor.y, 0, len(m.rows)-1)
 		m.SetHeight(len(m.rows))
