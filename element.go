@@ -2,7 +2,9 @@ package mdtt
 
 import (
 	"bytes"
+	"strings"
 
+	"github.com/charmbracelet/log"
 	east "github.com/yuin/goldmark-emoji/ast"
 	"github.com/yuin/goldmark/ast"
 	astext "github.com/yuin/goldmark/extension/ast"
@@ -19,23 +21,34 @@ func (tr *ModelBuilder) NewElement(node ast.Node, source []byte) Element {
 
 	switch node.Kind() {
 
-	// case ast.KindLink:
-	// 	return Element{}
+	case ast.KindLink:
+		n := node.(*ast.Link)
+		log.Debug(n)
+		return Element{
+			Renderer: func(b *bytes.Buffer) {
+				b.WriteString("[")
+			},
+			Finisher: func(b *bytes.Buffer) {
+				b.WriteString("](")
+				b.WriteString(string(n.Destination))
+				b.WriteString(")")
+			},
+		}
+	case ast.KindAutoLink:
+		n := node.(*ast.AutoLink)
+		u := string(n.URL(source))
+		if n.AutoLinkType == ast.AutoLinkEmail && !strings.HasPrefix(strings.ToLower(u), "mailto:") {
+			u = "mailto:" + u
+		}
 
-	// case ast.KindAutoLink:
-	// 	return Element{}
-
-	case ast.KindImage:
-		// n := node.(*ast.Image)
-		// text := string(n.Text(source))
-		// return Element{
-		// 	Renderer: &ImageElement{
-		// 		Text:    text,
-		// 		BaseURL: ctx.options.BaseURL,
-		// 		URL:     string(n.Destination),
-		// 	},
-		// }
-		return Element{}
+		return Element{
+			Renderer: func(b *bytes.Buffer) {
+				b.WriteString(u)
+			},
+			Finisher: func(b *bytes.Buffer) {
+				b.WriteString("")
+			},
+		}
 
 	case ast.KindCodeSpan:
 		return Element{
@@ -83,7 +96,6 @@ func (tr *ModelBuilder) NewElement(node ast.Node, source []byte) Element {
 		}
 
 	case ast.KindText:
-		// n := node.(*ast.CodeSpan)
 		return Element{
 			Renderer: func(b *bytes.Buffer) {
 				b.WriteString(string(node.Text(source)))
@@ -92,10 +104,6 @@ func (tr *ModelBuilder) NewElement(node ast.Node, source []byte) Element {
 				b.WriteString("")
 			},
 		}
-
-		//
-	// case astext.KindTaskCheckBox:
-	// case ast.KindTextBlock:
 
 	case east.KindEmoji:
 		n := node.(*east.Emoji)

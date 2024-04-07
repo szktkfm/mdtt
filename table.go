@@ -7,7 +7,6 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/log"
 	"github.com/mattn/go-runewidth"
 )
 
@@ -620,14 +619,12 @@ func (m *TableModel) MoveDown(n int) {
 func (m *TableModel) MoveRight(n int) {
 	m.cursor.x = clamp(m.cursor.x+n, 0, len(m.cols)-1)
 	m.UpdateViewport()
-	//TODO viewport
 }
 
 // MoveRight moves the selection right by any number of rows.
 func (m *TableModel) MoveLeft(n int) {
 	m.cursor.x = clamp(m.cursor.x-n, 0, len(m.cols)-1)
 	m.UpdateViewport()
-	//TODO viewport
 }
 
 // GotoTop moves the selection to the first row.
@@ -686,11 +683,8 @@ func (m *TableModel) renderRow(rowID int) string {
 		}
 
 		if isSelected {
-			log.Debug("selected", value)
 			renderedCell = m.styles.Selected.Render(style.Render(value))
-			log.Debug("renderd cell", renderedCell)
 		} else {
-			log.Debug("not selected", value)
 			renderedCell = m.styles.Cell.Render(style.Render(value))
 		}
 
