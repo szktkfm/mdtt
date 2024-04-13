@@ -206,13 +206,13 @@ func (m *TableModel) SetStyles(s tableStyles) {
 	m.updateViewport()
 }
 
-// Option is used to set options in New. For example:
+// TableOption is used to set options in New. For example:
 //
 //	table := New(WithColumns([]Column{{Title: "ID", Width: 10}}))
-type Option func(*TableModel)
+type TableOption func(*TableModel)
 
 // NewTableModel creates a new model for the table widget.
-func NewTableModel(opts ...Option) TableModel {
+func NewTableModel(opts ...TableOption) TableModel {
 	m := TableModel{
 		cursor:   cursor{0, 0},
 		viewport: viewport.New(0, 0),
@@ -233,21 +233,21 @@ func NewTableModel(opts ...Option) TableModel {
 }
 
 // WithColumns sets the table columns (headers).
-func WithColumns(cols []column) Option {
+func WithColumns(cols []column) TableOption {
 	return func(m *TableModel) {
 		m.cols = cols
 	}
 }
 
 // WithRows sets the table rows (data).
-func WithRows(rows []row) Option {
+func WithRows(rows []row) TableOption {
 	return func(m *TableModel) {
 		m.rows = rows
 	}
 }
 
 // TODO migration
-func WithNaiveRows(rows []naiveRow) Option {
+func WithNaiveRows(rows []naiveRow) TableOption {
 	return func(m *TableModel) {
 		m.rows = make([]row, len(rows))
 		for i, r := range rows {
@@ -261,35 +261,35 @@ func WithNaiveRows(rows []naiveRow) Option {
 }
 
 // WithHeight sets the height of the table.
-func WithHeight(h int) Option {
+func WithHeight(h int) TableOption {
 	return func(m *TableModel) {
 		m.viewport.Height = h
 	}
 }
 
 // WithWidth sets the width of the table.
-func WithWidth(w int) Option {
+func WithWidth(w int) TableOption {
 	return func(m *TableModel) {
 		m.viewport.Width = w
 	}
 }
 
 // WithFocused sets the focus state of the table.
-func WithFocused(f bool) Option {
+func WithFocused(f bool) TableOption {
 	return func(m *TableModel) {
 		m.focus = f
 	}
 }
 
 // WithStyles sets the table styles.
-func WithStyles(s tableStyles) Option {
+func WithStyles(s tableStyles) TableOption {
 	return func(m *TableModel) {
 		m.styles = s
 	}
 }
 
 // WithKeyMap sets the key map.
-func WithKeyMap(km keyMap) Option {
+func WithKeyMap(km keyMap) TableOption {
 	return func(m *TableModel) {
 		m.keys = km
 	}
@@ -733,26 +733,6 @@ func (m *TableModel) renderRow(rowID int) string {
 	row := lipgloss.JoinHorizontal(lipgloss.Left, s...)
 
 	return row
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-
-	return b
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-
-	return b
-}
-
-func clamp(v, low, high int) int {
-	return min(max(v, low), high)
 }
 
 func (m *TableModel) insertRow(idx int, ro row) {

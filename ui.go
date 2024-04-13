@@ -1,6 +1,8 @@
 package mdtt
 
 import (
+	"fmt"
+
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -17,6 +19,8 @@ type Model struct {
 	fpath   string
 	inplace bool
 }
+
+type Option func(*Model) error
 
 func (m Model) Init() tea.Cmd { return nil }
 
@@ -51,7 +55,7 @@ func (m Model) View() string {
 	}
 }
 
-func NewRoot(opts ...func(*Model)) Model {
+func NewUI(opts ...Option) (Model, error) {
 	t := NewTableModel(
 		WithColumns(DefaultColumns()),
 		WithNaiveRows(DefaultRows()),
@@ -62,16 +66,20 @@ func NewRoot(opts ...func(*Model)) Model {
 	m := Model{table: t}
 
 	for _, opt := range opts {
-		opt(&m)
+		err := opt(&m)
+		if err != nil {
+			return m, err
+		}
 	}
-
-	return m
+	return m, nil
 }
 
-func WithMarkdown(b []byte) func(*Model) {
-	return func(m *Model) {
-
+func WithMarkdown(b []byte) Option {
+	return func(m *Model) error {
 		tables := parse(b)
+		if len(tables) == 0 {
+			return fmt.Errorf("no tables found")
+		}
 		list := newHeaderList(
 			WithTables(tables),
 		)
@@ -84,18 +92,21 @@ func WithMarkdown(b []byte) func(*Model) {
 		} else {
 			m.preview = true
 		}
+		return nil
 	}
 }
 
-func WithFilePath(f string) func(*Model) {
-	return func(m *Model) {
+func WithFilePath(f string) Option {
+	return func(m *Model) error {
 		m.fpath = f
+		return nil
 	}
 }
 
-func WithInplace(i bool) func(*Model) {
-	return func(m *Model) {
+func WithInplace(i bool) Option {
+	return func(m *Model) error {
 		m.inplace = i
+		return nil
 	}
 }
 

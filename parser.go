@@ -14,8 +14,8 @@ import (
 
 var highPriority = 100
 
-// TableModelBuilder build TableModel from markdown
-type TableModelBuilder struct {
+// tableModelBuilder build TableModel from markdown
+type tableModelBuilder struct {
 	inTable bool
 	buf     *bytes.Buffer
 	// temprary storage of table rows
@@ -56,7 +56,7 @@ func parse(s []byte) []TableModel {
 
 }
 
-func (b *TableModelBuilder) build() []TableModel {
+func (b *tableModelBuilder) build() []TableModel {
 
 	var models []TableModel
 	for _, t := range b.tables {
@@ -94,66 +94,66 @@ func (b *TableModelBuilder) build() []TableModel {
 	return models
 }
 
-func NewTableModelBuilder() *TableModelBuilder {
+func NewTableModelBuilder() *tableModelBuilder {
 	var buf []byte
-	return &TableModelBuilder{
+	return &tableModelBuilder{
 		buf: bytes.NewBuffer(buf),
 	}
 }
 
 // RegisterFuncs implements NodeRenderer.RegisterFuncs.
-func (r *TableModelBuilder) RegisterFuncs(reg renderer.NodeRendererFuncRegisterer) {
+func (r *tableModelBuilder) RegisterFuncs(reg renderer.NodeRendererFuncRegisterer) {
 	// blocks
-	reg.Register(ast.KindDocument, r.renderNode)
-	reg.Register(ast.KindHeading, r.renderNode)
-	reg.Register(ast.KindBlockquote, r.renderNode)
-	reg.Register(ast.KindCodeBlock, r.renderNode)
-	reg.Register(ast.KindFencedCodeBlock, r.renderNode)
-	reg.Register(ast.KindHTMLBlock, r.renderNode)
-	reg.Register(ast.KindList, r.renderNode)
-	reg.Register(ast.KindListItem, r.renderNode)
-	reg.Register(ast.KindParagraph, r.renderNode)
-	reg.Register(ast.KindTextBlock, r.renderNode)
-	reg.Register(ast.KindThematicBreak, r.renderNode)
+	reg.Register(ast.KindDocument, r.consumeNode)
+	reg.Register(ast.KindHeading, r.consumeNode)
+	reg.Register(ast.KindBlockquote, r.consumeNode)
+	reg.Register(ast.KindCodeBlock, r.consumeNode)
+	reg.Register(ast.KindFencedCodeBlock, r.consumeNode)
+	reg.Register(ast.KindHTMLBlock, r.consumeNode)
+	reg.Register(ast.KindList, r.consumeNode)
+	reg.Register(ast.KindListItem, r.consumeNode)
+	reg.Register(ast.KindParagraph, r.consumeNode)
+	reg.Register(ast.KindTextBlock, r.consumeNode)
+	reg.Register(ast.KindThematicBreak, r.consumeNode)
 
 	// inlines
-	reg.Register(ast.KindAutoLink, r.renderNode)
-	reg.Register(ast.KindCodeSpan, r.renderNode)
-	reg.Register(ast.KindEmphasis, r.renderNode)
-	reg.Register(ast.KindImage, r.renderNode)
-	reg.Register(ast.KindLink, r.renderNode)
-	reg.Register(ast.KindRawHTML, r.renderNode)
-	reg.Register(ast.KindText, r.renderNode)
-	reg.Register(ast.KindString, r.renderNode)
+	reg.Register(ast.KindAutoLink, r.consumeNode)
+	reg.Register(ast.KindCodeSpan, r.consumeNode)
+	reg.Register(ast.KindEmphasis, r.consumeNode)
+	reg.Register(ast.KindImage, r.consumeNode)
+	reg.Register(ast.KindLink, r.consumeNode)
+	reg.Register(ast.KindRawHTML, r.consumeNode)
+	reg.Register(ast.KindText, r.consumeNode)
+	reg.Register(ast.KindString, r.consumeNode)
 
 	// tables
-	reg.Register(astext.KindTable, r.renderNode)
-	reg.Register(astext.KindTableHeader, r.renderNode)
-	reg.Register(astext.KindTableRow, r.renderNode)
-	reg.Register(astext.KindTableCell, r.renderNode)
+	reg.Register(astext.KindTable, r.consumeNode)
+	reg.Register(astext.KindTableHeader, r.consumeNode)
+	reg.Register(astext.KindTableRow, r.consumeNode)
+	reg.Register(astext.KindTableCell, r.consumeNode)
 
 	// definitions
-	reg.Register(astext.KindDefinitionList, r.renderNode)
-	reg.Register(astext.KindDefinitionTerm, r.renderNode)
-	reg.Register(astext.KindDefinitionDescription, r.renderNode)
+	reg.Register(astext.KindDefinitionList, r.consumeNode)
+	reg.Register(astext.KindDefinitionTerm, r.consumeNode)
+	reg.Register(astext.KindDefinitionDescription, r.consumeNode)
 
 	// footnotes
-	reg.Register(astext.KindFootnote, r.renderNode)
-	reg.Register(astext.KindFootnoteList, r.renderNode)
-	reg.Register(astext.KindFootnoteLink, r.renderNode)
-	reg.Register(astext.KindFootnoteBacklink, r.renderNode)
+	reg.Register(astext.KindFootnote, r.consumeNode)
+	reg.Register(astext.KindFootnoteList, r.consumeNode)
+	reg.Register(astext.KindFootnoteLink, r.consumeNode)
+	reg.Register(astext.KindFootnoteBacklink, r.consumeNode)
 
 	// checkboxes
-	reg.Register(astext.KindTaskCheckBox, r.renderNode)
+	reg.Register(astext.KindTaskCheckBox, r.consumeNode)
 
 	// strikethrough
-	reg.Register(astext.KindStrikethrough, r.renderNode)
+	reg.Register(astext.KindStrikethrough, r.consumeNode)
 
 	// emoji
-	reg.Register(east.KindEmoji, r.renderNode)
+	reg.Register(east.KindEmoji, r.consumeNode)
 }
 
-func (tb *TableModelBuilder) renderNode(w util.BufWriter, source []byte, node ast.Node, entering bool) (ast.WalkStatus, error) {
+func (tb *tableModelBuilder) consumeNode(w util.BufWriter, source []byte, node ast.Node, entering bool) (ast.WalkStatus, error) {
 	if entering {
 		if node.Kind() == astext.KindTable {
 			tb.inTable = true
@@ -161,7 +161,7 @@ func (tb *TableModelBuilder) renderNode(w util.BufWriter, source []byte, node as
 
 		if tb.inTable {
 			e := tb.NewElement(node, source)
-			e.Renderer(tb.buf)
+			e.open(tb.buf)
 		}
 
 	} else {
@@ -188,7 +188,7 @@ func (tb *TableModelBuilder) renderNode(w util.BufWriter, source []byte, node as
 				}
 			default:
 				e := tb.NewElement(node, source)
-				e.Finisher(tb.buf)
+				e.finish(tb.buf)
 			}
 		}
 	}
