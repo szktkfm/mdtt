@@ -56,31 +56,39 @@ var (
 
 func createModel(args []string, inplace bool) mdtt.Model {
 
-	var model mdtt.Model
-
 	if !isatty.IsTerminal(os.Stdin.Fd()) {
 
 		content, _ := io.ReadAll(os.Stdin)
-		model = mdtt.NewRoot(
+		model, err := mdtt.NewUI(
 			mdtt.WithMarkdown(content),
 		)
+		if err != nil {
+			log.Fatal(err)
+		}
+		return model
 
 	} else if len(args) == 0 {
 
-		model = mdtt.NewRoot()
+		model, err := mdtt.NewUI()
+		if err != nil {
+			log.Fatal(err)
+		}
+		return model
 
 	} else {
 		f, _ := os.Open(args[0])
 		defer f.Close()
 		content, _ := io.ReadAll(f)
-		model = mdtt.NewRoot(
+		model, err := mdtt.NewUI(
 			mdtt.WithMarkdown(content),
 			mdtt.WithInplace(inplace),
 			mdtt.WithFilePath(args[0]),
 		)
+		if err != nil {
+			log.Fatal(err)
+		}
+		return model
 	}
-
-	return model
 }
 
 func Execute() {

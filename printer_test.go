@@ -20,8 +20,8 @@ func TestFindSegment(t *testing.T) {
 `
 	b := bytes.NewBuffer([]byte(md))
 	tl.findLocations(b)
-	got := tl.locs[0]
-	want := TableLocation{
+	got := tl.rang[0]
+	want := tableRange{
 		Start: 9,
 		End:   50,
 	}
@@ -88,14 +88,14 @@ func TestReplaceTable(t *testing.T) {
 }
 
 func testUtilReplaceTable(src, wnt string, idx int) ([]byte, []byte) {
-	tw := TableWriter{}
+	tw := tableWriter{}
 	fpSrc, _ := os.Open(src)
 	defer fpSrc.Close()
 
 	fp_, _ := os.Open(wnt)
 	defer fp_.Close()
 	md, _ := io.ReadAll(fp_)
-	m := NewRoot(
+	m, _ := NewUI(
 		WithMarkdown(md),
 		WithFilePath(wnt),
 	)

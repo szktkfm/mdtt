@@ -10,25 +10,24 @@ import (
 	astext "github.com/yuin/goldmark/extension/ast"
 )
 
-type Element struct {
-	Entering string
-	Renderer func(b *bytes.Buffer)
-	Finisher func(b *bytes.Buffer)
+type element struct {
+	open   func(b *bytes.Buffer)
+	finish func(b *bytes.Buffer)
 }
 
 // NewElement returns the appropriate render Element for a given node.
-func (tr *TableModelBuilder) NewElement(node ast.Node, source []byte) Element {
+func (tr *tableModelBuilder) NewElement(node ast.Node, source []byte) element {
 
 	switch node.Kind() {
 
 	case ast.KindLink:
 		n := node.(*ast.Link)
 		log.Debug(n)
-		return Element{
-			Renderer: func(b *bytes.Buffer) {
+		return element{
+			open: func(b *bytes.Buffer) {
 				b.WriteString("[")
 			},
-			Finisher: func(b *bytes.Buffer) {
+			finish: func(b *bytes.Buffer) {
 				b.WriteString("](")
 				b.WriteString(string(n.Destination))
 				b.WriteString(")")
@@ -41,36 +40,36 @@ func (tr *TableModelBuilder) NewElement(node ast.Node, source []byte) Element {
 			u = "mailto:" + u
 		}
 
-		return Element{
-			Renderer: func(b *bytes.Buffer) {
+		return element{
+			open: func(b *bytes.Buffer) {
 				b.WriteString(u)
 			},
-			Finisher: func(b *bytes.Buffer) {
+			finish: func(b *bytes.Buffer) {
 				b.WriteString("")
 			},
 		}
 
 	case ast.KindCodeSpan:
-		return Element{
-			Renderer: func(b *bytes.Buffer) {
+		return element{
+			open: func(b *bytes.Buffer) {
 				b.WriteString("`")
 			},
-			Finisher: func(b *bytes.Buffer) {
+			finish: func(b *bytes.Buffer) {
 				b.WriteString("`")
 			},
 		}
 
 	case ast.KindEmphasis:
 		n := node.(*ast.Emphasis)
-		return Element{
-			Renderer: func(b *bytes.Buffer) {
+		return element{
+			open: func(b *bytes.Buffer) {
 				if n.Level == 2 {
 					b.WriteString("**")
 					return
 				}
 				b.WriteString("_")
 			},
-			Finisher: func(b *bytes.Buffer) {
+			finish: func(b *bytes.Buffer) {
 				if n.Level == 2 {
 					b.WriteString("**")
 					return
@@ -80,47 +79,47 @@ func (tr *TableModelBuilder) NewElement(node ast.Node, source []byte) Element {
 		}
 
 	case astext.KindTableCell:
-		return Element{
-			Renderer: func(b *bytes.Buffer) {
+		return element{
+			open: func(b *bytes.Buffer) {
 			},
-			Finisher: func(b *bytes.Buffer) {
+			finish: func(b *bytes.Buffer) {
 			},
 		}
 
 	case astext.KindTableRow:
-		return Element{
-			Renderer: func(b *bytes.Buffer) {
+		return element{
+			open: func(b *bytes.Buffer) {
 			},
-			Finisher: func(b *bytes.Buffer) {
+			finish: func(b *bytes.Buffer) {
 			},
 		}
 
 	case ast.KindText:
-		return Element{
-			Renderer: func(b *bytes.Buffer) {
+		return element{
+			open: func(b *bytes.Buffer) {
 				b.WriteString(string(node.Text(source)))
 			},
-			Finisher: func(b *bytes.Buffer) {
+			finish: func(b *bytes.Buffer) {
 				b.WriteString("")
 			},
 		}
 
 	case east.KindEmoji:
 		n := node.(*east.Emoji)
-		return Element{
-			Renderer: func(b *bytes.Buffer) {
+		return element{
+			open: func(b *bytes.Buffer) {
 				b.WriteString(string(n.Value.Unicode))
 			},
-			Finisher: func(b *bytes.Buffer) {
+			finish: func(b *bytes.Buffer) {
 				b.WriteString("")
 			},
 		}
 
 	default:
-		return Element{
-			Renderer: func(b *bytes.Buffer) {
+		return element{
+			open: func(b *bytes.Buffer) {
 			},
-			Finisher: func(b *bytes.Buffer) {
+			finish: func(b *bytes.Buffer) {
 			},
 		}
 	}

@@ -11,49 +11,53 @@ import (
 	"github.com/charmbracelet/log"
 )
 
-type TableWriter struct {
+type tableWriter struct {
+	// rendered table text
 	text string
 }
 
 type tableLocator struct {
-	locs        []TableLocation
+	rang        []tableRange
 	inTable     bool
 	codeFence   string
 	inCodeBlock bool
 }
 
-type TableLocation struct {
+type tableRange struct {
 	Start int
 	End   int
 }
 
 func Write(m Model) {
-	tw := TableWriter{}
+	tw := tableWriter{}
 	tw.render(m.table)
 	if m.inplace {
-		fp, err := os.Open(m.fpath)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer fp.Close()
-
-		b := tw.replaceTable(fp, m.choose)
-
-		os.WriteFile(m.fpath, b, 0644)
+		tw.writeFile(m)
 
 	} else {
 		fmt.Print(tw.text)
 	}
 }
 
-func (t *TableWriter) render(m TableModel) {
+func (tw *tableWriter) writeFile(m Model) {
+	fp, err := os.Open(m.fpath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer fp.Close()
+	b := tw.replaceTable(fp, m.choose)
+
+	os.WriteFile(m.fpath, b, 0644)
+}
+
+func (t *tableWriter) render(m TableModel) {
 	var sb strings.Builder
 	var width int
 
 	// render header
 	for _, c := range m.cols {
 		sb.WriteString("| ")
-		sb.WriteString(padOrTruncate(c.title.value(), c.width-1))
+		sb.WriteString(padOrTruncate(c.title.value(), max(c.width-1, 2)))
 		width += c.width
 	}
 	sb.WriteString("|\n")
@@ -64,23 +68,23 @@ func (t *TableWriter) render(m TableModel) {
 
 		if c.alignment == "left" {
 			sb.WriteString("|:")
-			sb.WriteString(strings.Repeat("-", c.width-2))
+			sb.WriteString(strings.Repeat("-", max(c.width-2, 1)))
 			sb.WriteString(" ")
 			continue
 		} else if c.alignment == "center" {
 			sb.WriteString("|:")
-			sb.WriteString(strings.Repeat("-", c.width-2))
+			sb.WriteString(strings.Repeat("-", max(c.width-2, 1)))
 			sb.WriteString(":")
 			continue
 		} else if c.alignment == "right" {
 			sb.WriteString("| ")
-			sb.WriteString(strings.Repeat("-", c.width-2))
+			sb.WriteString(strings.Repeat("-", max(c.width-2, 1)))
 			sb.WriteString(":")
 			continue
 		}
 
 		sb.WriteString("| ")
-		sb.WriteString(strings.Repeat("-", c.width-2))
+		sb.WriteString(strings.Repeat("-", max(c.width-2, 1)))
 		sb.WriteString(" ")
 	}
 	sb.WriteString("|\n")
@@ -89,7 +93,7 @@ func (t *TableWriter) render(m TableModel) {
 	for _, row := range m.rows {
 		for i, c := range row {
 			sb.WriteString("| ")
-			sb.WriteString(padOrTruncate(c.value(), m.cols[i].width-1))
+			sb.WriteString(padOrTruncate(c.value(), max(m.cols[i].width-1, 2)))
 		}
 		sb.WriteString("|\n")
 	}
@@ -97,15 +101,15 @@ func (t *TableWriter) render(m TableModel) {
 	t.text = sb.String()
 }
 
-func (t *TableWriter) replaceTable(fp *os.File, idx int) []byte {
+func (t *tableWriter) replaceTable(fp *os.File, idx int) []byte {
 
 	tl := tableLocator{}
 	tl.findLocations(fp)
 
 	fp.Seek(0, 0)
 	b, _ := io.ReadAll(fp)
-	b = append(b[:tl.locs[idx].Start-1],
-		append([]byte(t.text), b[tl.locs[idx].End:]...)...)
+	b = append(b[:tl.rang[idx].Start-1],
+		append([]byte(t.text), b[tl.rang[idx].End:]...)...)
 	return b
 }
 
@@ -141,7 +145,7 @@ func (tl *tableLocator) findLocations(fp io.Reader) {
 		if tl.inTable {
 			if isBlankLine(l) || isThematicBreak(l) {
 				tl.inTable = false
-				tl.locs = append(tl.locs, TableLocation{Start: start, End: pos})
+				tl.rang = append(tl.rang, tableRange{Start: start, End: pos})
 			}
 		}
 
@@ -162,7 +166,7 @@ func (tl *tableLocator) findLocations(fp io.Reader) {
 		prevlen = len(l) + 1
 	}
 	if tl.inTable {
-		tl.locs = append(tl.locs, TableLocation{Start: start, End: pos})
+		tl.rang = append(tl.rang, tableRange{Start: start, End: pos})
 	}
 }
 
