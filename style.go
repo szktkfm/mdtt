@@ -11,7 +11,7 @@ var (
 			BorderForeground(lipgloss.Color("240"))
 	// cell styles
 	cellCursorStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("205"))
+			Foreground(lipgloss.Color("#825DF2"))
 
 	// list styles
 	listItemStyle = lipgloss.NewStyle().
@@ -35,8 +35,8 @@ var (
 	// table styles
 	tableSelectedStyle = lipgloss.NewStyle().
 				Bold(true).
-				Foreground(lipgloss.Color("17")).
-				Background(lipgloss.Color("4"))
+				Foreground(lipgloss.Color("#FFFFFF")).
+				Background(lipgloss.Color("#825DF2"))
 
 	tableHeaderStyle = lipgloss.NewStyle().
 				Bold(true).
