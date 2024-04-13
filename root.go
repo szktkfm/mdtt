@@ -4,14 +4,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// Enum of Mode
-const (
-	NORMAL = iota
-	INSERT
-	HEADER
-	HEADER_INSERT
-)
-
 var (
 	defaultHeight = 2
 )
@@ -55,7 +47,7 @@ func (m Model) View() string {
 	if m.preview {
 		return m.list.view()
 	} else {
-		return baseStyle.Render(m.table.View()) + "\n"
+		return m.table.View() + "\n"
 	}
 }
 

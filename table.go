@@ -3,6 +3,7 @@ package mdtt
 import (
 	"time"
 
+	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
@@ -10,9 +11,18 @@ import (
 	"github.com/mattn/go-runewidth"
 )
 
+// Enum of Mode
+const (
+	NORMAL = iota
+	INSERT
+	HEADER
+	HEADER_INSERT
+	HELP
+)
+
 // TableModel defines a state for the table widget.
 type TableModel struct {
-	keyMap   keyMap
+	keys     keyMap
 	cols     []column
 	rows     []row
 	cursor   cursor
@@ -24,6 +34,7 @@ type TableModel struct {
 	end      int
 	mode     int
 	register register
+	help     help.Model
 }
 
 type cursor struct {
@@ -73,6 +84,7 @@ type keyMap struct {
 	insertMode   key.Binding
 	normalMode   key.Binding
 	quit         key.Binding
+	help         key.Binding
 }
 
 // defaultKeyMap returns a default set of keybindings.
@@ -97,19 +109,19 @@ func defaultKeyMap() keyMap {
 		),
 		addRowCol: key.NewBinding(
 			key.WithKeys("o"),
-			key.WithHelp("o", "Add row"),
+			key.WithHelp("o/v+o", "add row/column"),
 		),
 		delRowCol: key.NewBinding(
 			key.WithKeys("d"),
-			key.WithHelp("d", "Add row"),
+			key.WithHelp("dd/v+d", "add row/column"),
 		),
 		yank: key.NewBinding(
 			key.WithKeys("y"),
-			key.WithHelp("y", "Copy"),
+			key.WithHelp("y", "copy row"),
 		),
 		paste: key.NewBinding(
 			key.WithKeys("p"),
-			key.WithHelp("p", "Paste"),
+			key.WithHelp("p", "paste"),
 		),
 		pageUp: key.NewBinding(
 			key.WithKeys("b", "pgup"),
@@ -137,7 +149,7 @@ func defaultKeyMap() keyMap {
 		),
 		insertMode: key.NewBinding(
 			key.WithKeys("i"),
-			key.WithHelp("i", "insert"),
+			key.WithHelp("i", "insert mode"),
 		),
 		normalMode: key.NewBinding(
 			key.WithKeys("esc", "ctrl+c"),
@@ -147,6 +159,27 @@ func defaultKeyMap() keyMap {
 			key.WithKeys("q"),
 			key.WithHelp("q", "quit"),
 		),
+		help: key.NewBinding(
+			key.WithKeys("?"),
+			key.WithHelp("?", "toggle help"),
+		),
+	}
+}
+
+// ShortHelp returns keybindings to be shown in the mini help view. It's part
+// of the key.Map interface.
+func (k keyMap) ShortHelp() []key.Binding {
+	return []key.Binding{k.help}
+}
+
+// FullHelp returns keybindings for the expanded help view. It's part of the
+// key.Map interface.
+func (k keyMap) FullHelp() [][]key.Binding {
+	return [][]key.Binding{
+		{k.lineUp, k.lineDown, k.left, k.right, k.pageUp, k.pageDown,
+			k.halfPageUp, k.halfPageDown, k.gotoTop, k.gotoBottom},
+		{k.insertMode, k.normalMode, k.addRowCol, k.delRowCol,
+			k.yank, k.paste, k.quit, k.help},
 	}
 }
 
@@ -184,9 +217,10 @@ func NewTableModel(opts ...Option) TableModel {
 		cursor:   cursor{0, 0},
 		viewport: viewport.New(0, 0),
 
-		keyMap: defaultKeyMap(),
+		keys:   defaultKeyMap(),
 		styles: defaultStyles(),
 		mode:   NORMAL,
+		help:   help.New(),
 	}
 
 	for _, opt := range opts {
@@ -257,16 +291,13 @@ func WithStyles(s tableStyles) Option {
 // WithKeyMap sets the key map.
 func WithKeyMap(km keyMap) Option {
 	return func(m *TableModel) {
-		m.keyMap = km
+		m.keys = km
 	}
 }
 
 // Update is the Bubble Tea update loop.
 func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 	var cmds []tea.Cmd
-	// if !m.focus {
-	// 	return m, nil
-	// }
 
 	switch m.mode {
 	case NORMAL, HEADER:
@@ -277,47 +308,49 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 			m.prevKey = ""
 		case tea.KeyMsg:
 			switch {
-			case key.Matches(msg, m.keyMap.quit):
+			case key.Matches(msg, m.keys.help):
+				m.enableAllHelp()
+			case key.Matches(msg, m.keys.quit):
 				return m, quitCmd()
-			case key.Matches(msg, m.keyMap.lineUp):
+			case key.Matches(msg, m.keys.lineUp):
 				m.moveUp(1)
-			case key.Matches(msg, m.keyMap.lineDown):
+			case key.Matches(msg, m.keys.lineDown):
 				m.moveDown(1)
-			case key.Matches(msg, m.keyMap.right):
+			case key.Matches(msg, m.keys.right):
 				m.moveRight(1)
-			case key.Matches(msg, m.keyMap.left):
+			case key.Matches(msg, m.keys.left):
 				m.moveLeft(1)
-			case key.Matches(msg, m.keyMap.addRowCol):
+			case key.Matches(msg, m.keys.addRowCol):
 				m.addEmpty()
 				m.switchMode(INSERT)
 
-			case key.Matches(msg, m.keyMap.delRowCol):
+			case key.Matches(msg, m.keys.delRowCol):
 				if m.mode == HEADER {
 					return m, nil
 				}
 				cmd := m.delete()
 				cmds = append(cmds, cmd)
-			case key.Matches(msg, m.keyMap.yank):
+			case key.Matches(msg, m.keys.yank):
 				m.copy()
 
-			case key.Matches(msg, m.keyMap.paste):
+			case key.Matches(msg, m.keys.paste):
 				m.paste()
 
-			case key.Matches(msg, m.keyMap.pageUp):
+			case key.Matches(msg, m.keys.pageUp):
 				m.moveUp(m.viewport.Height)
-			case key.Matches(msg, m.keyMap.pageDown):
+			case key.Matches(msg, m.keys.pageDown):
 				m.moveDown(m.viewport.Height)
-			case key.Matches(msg, m.keyMap.halfPageUp):
+			case key.Matches(msg, m.keys.halfPageUp):
 				m.moveUp(m.viewport.Height / 2)
-			case key.Matches(msg, m.keyMap.halfPageDown):
+			case key.Matches(msg, m.keys.halfPageDown):
 				m.moveDown(m.viewport.Height / 2)
-			case key.Matches(msg, m.keyMap.lineDown):
+			case key.Matches(msg, m.keys.lineDown):
 				m.moveDown(1)
-			case key.Matches(msg, m.keyMap.gotoTop):
+			case key.Matches(msg, m.keys.gotoTop):
 				m.gotoTop()
-			case key.Matches(msg, m.keyMap.gotoBottom):
+			case key.Matches(msg, m.keys.gotoBottom):
 				m.gotoBottom()
-			case key.Matches(msg, m.keyMap.insertMode):
+			case key.Matches(msg, m.keys.insertMode):
 				if len(m.cols) == 0 {
 					return m, nil
 				}
@@ -337,7 +370,7 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 			m.prevKey = ""
 		case tea.KeyMsg:
 			switch {
-			case key.Matches(msg, m.keyMap.normalMode):
+			case key.Matches(msg, m.keys.normalMode):
 				if m.mode == HEADER_INSERT {
 					m.switchMode(HEADER)
 				} else {
@@ -349,9 +382,29 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 			}
 			m.prevKey = msg.String()
 		}
+	case HELP:
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			switch {
+			case key.Matches(msg, m.keys.help):
+				m.disableAllHelp()
+			case key.Matches(msg, m.keys.quit):
+				return m, quitCmd()
+			}
+		}
 	}
 
 	return m, tea.Batch(cmds...)
+}
+
+func (m *TableModel) enableAllHelp() {
+	m.mode = HELP
+	m.help.ShowAll = true
+}
+
+func (m *TableModel) disableAllHelp() {
+	m.mode = NORMAL
+	m.help.ShowAll = false
 }
 
 func (m *TableModel) updateFocusedCell(msg tea.KeyMsg) tea.Cmd {
@@ -416,7 +469,11 @@ func (m *TableModel) paste() {
 
 // View renders the component.
 func (m TableModel) View() string {
-	return m.headersView() + "\n" + m.viewport.View()
+	if m.mode == HELP {
+		return tableFrameStyle.Render(m.help.View(m.keys))
+	}
+	return tableFrameStyle.Render(m.headersView()+"\n"+m.viewport.View()) +
+		"\n " + m.help.View(m.keys)
 }
 
 // updateViewport updates the list content based on the previously defined
