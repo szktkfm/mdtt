@@ -32,11 +32,6 @@ var (
 			BorderForeground(lipgloss.Color("240")).
 			Foreground(lipgloss.Color("249"))
 
-	listHeaderCellStyle = lipgloss.NewStyle().Bold(true).Padding(0, 2).
-				Border(lipgloss.NormalBorder(), false, false, false, false).
-				BorderForeground(lipgloss.Color("240")).
-				Foreground(lipgloss.Color("249"))
-
 	// table styles
 	tableSelectedStyle = lipgloss.NewStyle().
 				Bold(true).

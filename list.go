@@ -16,13 +16,13 @@ var (
 
 type item string
 
-type SelectMsg struct {
+type selectMsg struct {
 	idx int
 }
 
-func SelectCmd(idx int) tea.Cmd {
+func selectCmd(idx int) tea.Cmd {
 	return func() tea.Msg {
-		return SelectMsg{idx: idx}
+		return selectMsg{idx: idx}
 	}
 }
 
@@ -52,15 +52,11 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 	fmt.Fprint(w, fn(str))
 }
 
-type ListModel struct {
+type headerList struct {
 	list list.Model
 }
 
-func (m ListModel) Init() tea.Cmd {
-	return nil
-}
-
-func (m ListModel) Update(msg tea.Msg) (ListModel, tea.Cmd) {
+func (m headerList) update(msg tea.Msg) (headerList, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.list.SetWidth(msg.Width)
@@ -69,7 +65,7 @@ func (m ListModel) Update(msg tea.Msg) (ListModel, tea.Cmd) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "enter":
-			return m, SelectCmd(m.list.Index())
+			return m, selectCmd(m.list.Index())
 		}
 	}
 
@@ -78,11 +74,11 @@ func (m ListModel) Update(msg tea.Msg) (ListModel, tea.Cmd) {
 	return m, cmd
 }
 
-func (m ListModel) View() string {
+func (m headerList) view() string {
 	return "\n" + m.list.View()
 }
 
-func NewList(opts ...func(*ListModel)) ListModel {
+func newHeaderList(opts ...func(*headerList)) headerList {
 	listItems := []list.Item{}
 	const defaultWidth = 20
 
@@ -96,7 +92,7 @@ func NewList(opts ...func(*ListModel)) ListModel {
 	l.Styles.PaginationStyle = listPaginationStyle
 	l.Styles.HelpStyle = listHelpStyle
 
-	m := ListModel{list: l}
+	m := headerList{list: l}
 
 	for _, opt := range opts {
 		opt(&m)
@@ -108,22 +104,22 @@ func NewList(opts ...func(*ListModel)) ListModel {
 
 }
 
-func WithItems(items []list.Item) func(*ListModel) {
-	return func(m *ListModel) {
+func WithItems(items []list.Item) func(*headerList) {
+	return func(m *headerList) {
 		m.list.SetItems(items)
 	}
 }
 
-func WithTables(tables []TableModel) func(*ListModel) {
-	return func(m *ListModel) {
+func WithTables(tables []TableModel) func(*headerList) {
+	return func(m *headerList) {
 		var items []list.Item
 		for _, t := range tables {
 			var headerCells []string
 			for _, c := range t.cols {
-				headerCells = append(headerCells, strings.Repeat(" ", 4)+c.Title.Value())
+				headerCells = append(headerCells, strings.Repeat(" ", 4)+c.Title.value())
 			}
 			header := lipgloss.JoinHorizontal(lipgloss.Left, headerCells...)
-			header = PadOrTruncate(header, headerWidth) + " …"
+			header = padOrTruncate(header, headerWidth) + " …"
 			items = append(items, item(listHeaderStyle.Render(header)))
 		}
 		m.list.SetItems(items)

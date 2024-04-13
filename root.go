@@ -21,7 +21,7 @@ type Model struct {
 	tables  []TableModel
 	table   TableModel
 	choose  int
-	list    ListModel
+	list    headerList
 	fpath   string
 	inplace bool
 }
@@ -31,11 +31,11 @@ func (m Model) Init() tea.Cmd { return nil }
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
-	case SelectMsg:
+	case selectMsg:
 		m.preview = false
 		m.choose = msg.idx
 		m.table = m.tables[msg.idx]
-	case QuitMsg:
+	case quitMsg:
 		if !m.preview {
 			Write(m)
 		}
@@ -43,7 +43,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	if m.preview {
-		m.list, cmd = m.list.Update(msg)
+		m.list, cmd = m.list.update(msg)
 	} else {
 		m.table, cmd = m.table.Update(msg)
 	}
@@ -53,7 +53,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) View() string {
 	if m.preview {
-		return m.list.View()
+		return m.list.view()
 	} else {
 		return baseStyle.Render(m.table.View()) + "\n"
 	}
@@ -65,7 +65,7 @@ func NewRoot(opts ...func(*Model)) Model {
 		WithNaiveRows(DefaultRows()),
 		WithFocused(true),
 		WithHeight(defaultHeight),
-		WithStyles(DefaultStyles()),
+		WithStyles(defaultStyles()),
 	)
 	m := Model{table: t}
 
@@ -80,7 +80,7 @@ func WithMarkdown(b []byte) func(*Model) {
 	return func(m *Model) {
 
 		tables := parse(b)
-		list := NewList(
+		list := newHeaderList(
 			WithTables(tables),
 		)
 		m.table = tables[0]
@@ -107,15 +107,15 @@ func WithInplace(i bool) func(*Model) {
 	}
 }
 
-func DefaultRows() []NaiveRow {
-	return []NaiveRow{
+func DefaultRows() []naiveRow {
+	return []naiveRow{
 		{"", ""},
 	}
 }
 
-func DefaultColumns() []Column {
-	return []Column{
-		{Title: NewCell(""), Width: 4},
-		{Title: NewCell(""), Width: 4},
+func DefaultColumns() []column {
+	return []column{
+		{Title: newCell(""), Width: 4},
+		{Title: newCell(""), Width: 4},
 	}
 }

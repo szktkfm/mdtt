@@ -52,7 +52,7 @@ func (t *TableWriter) render(m TableModel) {
 
 	for _, c := range m.cols {
 		sb.WriteString("| ")
-		sb.WriteString(PadOrTruncate(c.Title.Value(), c.Width-1))
+		sb.WriteString(padOrTruncate(c.Title.value(), c.Width-1))
 		width += c.Width
 	}
 	sb.WriteString("|\n")
@@ -67,7 +67,7 @@ func (t *TableWriter) render(m TableModel) {
 	for _, row := range m.rows {
 		for i, c := range row {
 			sb.WriteString("| ")
-			sb.WriteString(PadOrTruncate(c.Value(), m.cols[i].Width-1))
+			sb.WriteString(padOrTruncate(c.value(), m.cols[i].Width-1))
 		}
 		sb.WriteString("|\n")
 	}

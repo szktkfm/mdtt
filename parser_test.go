@@ -8,11 +8,11 @@ import (
 
 func TestParse(t *testing.T) {
 
-	cols1 := []Column{
-		{Title: NewCell("Key binding"), Width: 4},
-		{Title: NewCell("Description"), Width: 20},
+	cols1 := []column{
+		{Title: newCell("Key binding"), Width: 4},
+		{Title: newCell("Description"), Width: 20},
 	}
-	rows1 := []NaiveRow{
+	rows1 := []naiveRow{
 		{"`Arrows`, `hjkl`", "Move"},
 	}
 	want1 := NewTable(
@@ -20,11 +20,11 @@ func TestParse(t *testing.T) {
 		WithNaiveRows(rows1),
 	)
 
-	cols2 := []Column{
-		{Title: NewCell("Key binding"), Width: 4},
-		{Title: NewCell("Description"), Width: 20},
+	cols2 := []column{
+		{Title: newCell("Key binding"), Width: 4},
+		{Title: newCell("Description"), Width: 20},
 	}
-	rows2 := []NaiveRow{
+	rows2 := []naiveRow{
 		{"**Esc**, _q_", "Exit"},
 	}
 	want2 := NewTable(
@@ -49,14 +49,14 @@ func TestParse(t *testing.T) {
 func isEqualTables(x, y TableModel) bool {
 	ret := true
 	for i, c := range x.cols {
-		if c.Title.Value() != y.cols[i].Title.Value() {
+		if c.Title.value() != y.cols[i].Title.value() {
 			ret = false
 		}
 	}
 
 	for i, r := range x.rows {
 		for j, c := range r {
-			if c.Value() != y.rows[i][j].Value() {
+			if c.value() != y.rows[i][j].value() {
 				ret = false
 			}
 		}

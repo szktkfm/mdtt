@@ -10,30 +10,26 @@ type (
 	errMsg error
 )
 
-type WidthMsg struct {
+type widthMsg struct {
 	width int
 }
 
-type Cell struct {
+type cell struct {
 	textInput textinput.Model
 	err       error
 }
 
-func NewCell(value string) Cell {
+func newCell(value string) cell {
 	ta := textinput.New()
 	ta.Placeholder = ""
 	ta.Focus()
 	ta.SetValue(value)
 	ta.Prompt = ""
 	ta.Cursor.Style = cellCursorStyle
-	return Cell{textInput: ta, err: nil}
+	return cell{textInput: ta, err: nil}
 }
 
-func (m Cell) Init() tea.Cmd {
-	return textinput.Blink
-}
-
-func (m Cell) Update(msg tea.Msg) (Cell, tea.Cmd) {
+func (m cell) update(msg tea.Msg) (cell, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
@@ -49,14 +45,14 @@ func (m Cell) Update(msg tea.Msg) (Cell, tea.Cmd) {
 
 func updateWidthCmd(width int) tea.Cmd {
 	return func() tea.Msg {
-		return WidthMsg{width}
+		return widthMsg{width}
 	}
 }
 
-func (m Cell) View() string {
+func (m cell) view() string {
 	return m.textInput.View()
 }
 
-func (m Cell) Value() string {
+func (m cell) value() string {
 	return m.textInput.Value()
 }

@@ -3,7 +3,6 @@ package mdtt
 import (
 	"bytes"
 
-	"github.com/charmbracelet/log"
 	"github.com/yuin/goldmark"
 	east "github.com/yuin/goldmark-emoji/ast"
 	"github.com/yuin/goldmark/ast"
@@ -56,12 +55,12 @@ func (b *ModelBuilder) build() []TableModel {
 
 	var models []TableModel
 	for _, t := range b.tables {
-		var rows []NaiveRow
+		var rows []naiveRow
 		for i := range len(t.rows) / len(t.cols) {
 			rows = append(rows, t.rows[i*len(t.cols):(i+1)*len(t.cols)])
 		}
 
-		var cols []Column
+		var cols []column
 		for i := range len(t.cols) {
 			//todo: widthおかしい
 			var maxWidth int
@@ -69,7 +68,7 @@ func (b *ModelBuilder) build() []TableModel {
 				maxWidth = max(len(r[i]), maxWidth)
 			}
 			maxWidth = max(maxWidth, len(t.cols[i]))
-			cols = append(cols, Column{Title: NewCell(t.cols[i]), Width: maxWidth + 2})
+			cols = append(cols, column{Title: newCell(t.cols[i]), Width: maxWidth + 2})
 		}
 
 		t := NewTable(
@@ -79,7 +78,7 @@ func (b *ModelBuilder) build() []TableModel {
 			WithHeight(len(rows)+1),
 		)
 
-		style := DefaultStyles()
+		style := defaultStyles()
 
 		t.SetStyles(style)
 		models = append(models, t)
@@ -149,8 +148,6 @@ func (r *ModelBuilder) RegisterFuncs(reg renderer.NodeRendererFuncRegisterer) {
 
 func (r *ModelBuilder) renderNode(w util.BufWriter, source []byte, node ast.Node, entering bool) (ast.WalkStatus, error) {
 	if entering {
-		log.Debugf(">Start %v = %v", node.Kind().String(), string(node.Text(source)))
-
 		if node.Kind() == astext.KindTable {
 			r.inTable = true
 		}
@@ -161,8 +158,6 @@ func (r *ModelBuilder) renderNode(w util.BufWriter, source []byte, node ast.Node
 		}
 
 	} else {
-		log.Debugf("<End %v", node.Kind().String())
-
 		if node.Kind() == astext.KindTable {
 			r.tables = append(r.tables, Table{r.rows, r.cols})
 			r.rows = nil
