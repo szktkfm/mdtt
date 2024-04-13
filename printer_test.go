@@ -39,13 +39,13 @@ func TestReplaceTable(t *testing.T) {
 		wnt  string
 	}{
 		{
-			name: "Test Case 1",
+			name: "normal",
 			src:  "testdata/replace01.md",
 			idx:  0,
 			wnt:  "testdata/replace01_want.md",
 		},
 		{
-			name: "Test Case 2",
+			name: "thematic break",
 			src:  "testdata/replace02.md",
 			idx:  0,
 			wnt:  "testdata/replace02_want.md",
@@ -57,16 +57,22 @@ func TestReplaceTable(t *testing.T) {
 			wnt:  "testdata/replace03_want.md",
 		},
 		{
-			name: "Test Case 4",
+			name: "multiple tables",
 			src:  "testdata/replace04.md",
 			idx:  1,
 			wnt:  "testdata/replace04_want.md",
 		},
 		{
-			name: "Test Case 5",
+			name: "indented code block",
 			src:  "testdata/replace05.md",
 			idx:  0,
 			wnt:  "testdata/replace05_want.md",
+		},
+		{
+			name: "left/center/right aligned",
+			src:  "testdata/replace06.md",
+			idx:  0,
+			wnt:  "testdata/replace06_want.md",
 		},
 	}
 

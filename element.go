@@ -17,7 +17,7 @@ type Element struct {
 }
 
 // NewElement returns the appropriate render Element for a given node.
-func (tr *ModelBuilder) NewElement(node ast.Node, source []byte) Element {
+func (tr *TableModelBuilder) NewElement(node ast.Node, source []byte) Element {
 
 	switch node.Kind() {
 

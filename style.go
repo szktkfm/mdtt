@@ -19,7 +19,7 @@ var (
 
 	listSelectedItemStyle = lipgloss.NewStyle().
 				PaddingLeft(0).
-				Foreground(lipgloss.Color("170"))
+				Foreground(lipgloss.Color("#825DF2"))
 
 	listPaginationStyle = list.DefaultStyles().
 				PaginationStyle.PaddingLeft(4)

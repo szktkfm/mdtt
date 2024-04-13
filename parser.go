@@ -14,18 +14,23 @@ import (
 
 var highPriority = 100
 
-// ModelBuilder build tea.Model from  markdown
-type ModelBuilder struct {
+// TableModelBuilder build TableModel from markdown
+type TableModelBuilder struct {
 	inTable bool
 	buf     *bytes.Buffer
-	rows    []string
-	cols    []string
-	tables  []Table
+	// temprary storage of table rows
+	rows []string
+	// temprary storage of table columns
+	cols []string
+	// temprary storage of table alignments
+	alignment []string
+	tables    []table
 }
 
-type Table struct {
-	rows []string
-	cols []string
+type table struct {
+	rows      []string
+	cols      []string
+	alignment []string
 }
 
 func parse(s []byte) []TableModel {
@@ -34,7 +39,7 @@ func parse(s []byte) []TableModel {
 		goldmark.WithExtensions(extension.Table),
 	)
 
-	builder := NewModelBuilder()
+	builder := NewTableModelBuilder()
 
 	md.SetRenderer(
 		renderer.NewRenderer(
@@ -51,7 +56,7 @@ func parse(s []byte) []TableModel {
 
 }
 
-func (b *ModelBuilder) build() []TableModel {
+func (b *TableModelBuilder) build() []TableModel {
 
 	var models []TableModel
 	for _, t := range b.tables {
@@ -62,16 +67,19 @@ func (b *ModelBuilder) build() []TableModel {
 
 		var cols []column
 		for i := range len(t.cols) {
-			//todo: widthおかしい
 			var maxWidth int
 			for _, r := range rows {
 				maxWidth = max(len(r[i]), maxWidth)
 			}
 			maxWidth = max(maxWidth, len(t.cols[i]))
-			cols = append(cols, column{Title: newCell(t.cols[i]), Width: maxWidth + 2})
+			cols = append(cols, column{
+				title:     NewCell(t.cols[i]),
+				width:     maxWidth + 2,
+				alignment: t.alignment[i],
+			})
 		}
 
-		t := NewTable(
+		t := NewTableModel(
 			WithColumns(cols),
 			WithNaiveRows(rows),
 			WithFocused(true),
@@ -86,16 +94,15 @@ func (b *ModelBuilder) build() []TableModel {
 	return models
 }
 
-// NewModelBuilder returns a new ANSIRenderer with style and options set.
-func NewModelBuilder() *ModelBuilder {
+func NewTableModelBuilder() *TableModelBuilder {
 	var buf []byte
-	return &ModelBuilder{
+	return &TableModelBuilder{
 		buf: bytes.NewBuffer(buf),
 	}
 }
 
 // RegisterFuncs implements NodeRenderer.RegisterFuncs.
-func (r *ModelBuilder) RegisterFuncs(reg renderer.NodeRendererFuncRegisterer) {
+func (r *TableModelBuilder) RegisterFuncs(reg renderer.NodeRendererFuncRegisterer) {
 	// blocks
 	reg.Register(ast.KindDocument, r.renderNode)
 	reg.Register(ast.KindHeading, r.renderNode)
@@ -146,39 +153,42 @@ func (r *ModelBuilder) RegisterFuncs(reg renderer.NodeRendererFuncRegisterer) {
 	reg.Register(east.KindEmoji, r.renderNode)
 }
 
-func (r *ModelBuilder) renderNode(w util.BufWriter, source []byte, node ast.Node, entering bool) (ast.WalkStatus, error) {
+func (tb *TableModelBuilder) renderNode(w util.BufWriter, source []byte, node ast.Node, entering bool) (ast.WalkStatus, error) {
 	if entering {
 		if node.Kind() == astext.KindTable {
-			r.inTable = true
+			tb.inTable = true
 		}
 
-		if r.inTable {
-			e := r.NewElement(node, source)
-			e.Renderer(r.buf)
+		if tb.inTable {
+			e := tb.NewElement(node, source)
+			e.Renderer(tb.buf)
 		}
 
 	} else {
 		if node.Kind() == astext.KindTable {
-			r.tables = append(r.tables, Table{r.rows, r.cols})
-			r.rows = nil
-			r.cols = nil
-			r.inTable = false
+			tb.tables = append(tb.tables, table{tb.rows, tb.cols, tb.alignment})
+			tb.rows = nil
+			tb.cols = nil
+			tb.alignment = nil
+			tb.inTable = false
 		}
 
-		if r.inTable {
+		if tb.inTable {
 			switch node.Kind() {
 			case astext.KindTableCell:
 				switch node.Parent().Kind() {
 				case astext.KindTableHeader:
-					r.cols = append(r.cols, r.buf.String())
-					r.buf.Reset()
+					n := node.(*astext.TableCell)
+					tb.cols = append(tb.cols, tb.buf.String())
+					tb.alignment = append(tb.alignment, n.Alignment.String())
+					tb.buf.Reset()
 				case astext.KindTableRow:
-					r.rows = append(r.rows, r.buf.String())
-					r.buf.Reset()
+					tb.rows = append(tb.rows, tb.buf.String())
+					tb.buf.Reset()
 				}
 			default:
-				e := r.NewElement(node, source)
-				e.Finisher(r.buf)
+				e := tb.NewElement(node, source)
+				e.Finisher(tb.buf)
 			}
 		}
 	}

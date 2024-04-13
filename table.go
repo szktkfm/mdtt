@@ -38,8 +38,9 @@ type naiveRow []string
 
 // column defines the table structure.
 type column struct {
-	Title cell
-	Width int
+	title     cell
+	width     int
+	alignment string
 }
 
 type register interface{}
@@ -177,8 +178,8 @@ func (m *TableModel) SetStyles(s tableStyles) {
 //	table := New(WithColumns([]Column{{Title: "ID", Width: 10}}))
 type Option func(*TableModel)
 
-// NewTable creates a new model for the table widget.
-func NewTable(opts ...Option) TableModel {
+// NewTableModel creates a new model for the table widget.
+func NewTableModel(opts ...Option) TableModel {
 	m := TableModel{
 		cursor:   cursor{0, 0},
 		viewport: viewport.New(0, 0),
@@ -218,7 +219,7 @@ func WithNaiveRows(rows []naiveRow) Option {
 		for i, r := range rows {
 			m.rows[i] = make(row, len(r))
 			for j, c := range r {
-				m.rows[i][j] = newCell(c)
+				m.rows[i][j] = NewCell(c)
 			}
 		}
 		m.SetHeight(len(rows))
@@ -360,8 +361,8 @@ func (m *TableModel) updateFocusedCell(msg tea.KeyMsg) tea.Cmd {
 		m.updateViewport()
 		return cmd
 	} else if m.mode == HEADER_INSERT {
-		newCell, cmd := m.cols[m.cursor.x].Title.update(msg)
-		m.cols[m.cursor.x].Title = newCell
+		newCell, cmd := m.cols[m.cursor.x].title.update(msg)
+		m.cols[m.cursor.x].title = newCell
 		m.updateViewport()
 		return cmd
 	}
@@ -383,8 +384,8 @@ func (m TableModel) updateWidth(msg widthMsg) {
 	for _, r := range m.rows {
 		maxWidth = max(runewidth.StringWidth(r[m.cursor.x].value())+2, maxWidth)
 	}
-	maxWidth = max(runewidth.StringWidth(m.cols[m.cursor.x].Title.value())+2, maxWidth)
-	m.cols[m.cursor.x].Width = maxWidth
+	maxWidth = max(runewidth.StringWidth(m.cols[m.cursor.x].title.value())+2, maxWidth)
+	m.cols[m.cursor.x].width = maxWidth
 }
 
 func (m *TableModel) copy() {
@@ -393,7 +394,7 @@ func (m *TableModel) copy() {
 	}
 	var row row
 	for _, cell := range m.rows[m.cursor.y] {
-		row = append(row, newCell(cell.value()))
+		row = append(row, NewCell(cell.value()))
 	}
 	m.register = row
 }
@@ -404,7 +405,7 @@ func (m *TableModel) paste() {
 
 		var ro row
 		for _, cell := range m.register.(row) {
-			ro = append(ro, newCell(cell.value()))
+			ro = append(ro, NewCell(cell.value()))
 		}
 		m.register = ro
 	}
@@ -468,7 +469,7 @@ func (m *TableModel) addEmpty() {
 	}
 	newRow := make(row, len(m.cols))
 	for i := range m.cols {
-		newRow[i] = newCell("")
+		newRow[i] = NewCell("")
 	}
 
 	if m.mode == HEADER || len(m.rows) == 0 {
@@ -507,12 +508,12 @@ func (m *TableModel) delete() tea.Cmd {
 func (m *TableModel) addColumn() {
 	var rows []row
 	for i := range m.rows {
-		cell := newCell("")
+		cell := NewCell("")
 		rows = append(rows, insertCell(m.rows[i], m.cursor.x+1, cell))
 	}
 	m.SetRows(rows)
 
-	newCol := insertCol(m.cols, m.cursor.x+1, column{Title: newCell(""), Width: 4})
+	newCol := insertCol(m.cols, m.cursor.x+1, column{title: NewCell(""), width: 4})
 	m.SetColumns(newCol)
 	m.moveRight(1)
 }
@@ -626,16 +627,16 @@ func (m TableModel) headersView() string {
 		if i == m.cursor.x && m.mode == HEADER {
 			style = m.styles.selected.
 				Copy().
-				PaddingRight(col.Width - len(col.Title.value()))
+				PaddingRight(col.width - len(col.title.value()))
 		} else {
-			style = lipgloss.NewStyle().Width(col.Width).MaxWidth(col.Width).Inline(true)
+			style = lipgloss.NewStyle().Width(col.width).MaxWidth(col.width).Inline(true)
 		}
 
 		var renderedCell string
 		if i == m.cursor.x && m.mode == HEADER_INSERT {
-			renderedCell = style.Render(col.Title.view())
+			renderedCell = style.Render(col.title.view())
 		} else {
-			renderedCell = style.Render(col.Title.value())
+			renderedCell = style.Render(col.title.value())
 		}
 		s = append(s, m.styles.header.Render(renderedCell))
 	}
@@ -646,8 +647,8 @@ func (m *TableModel) renderRow(rowID int) string {
 	var s = make([]string, 0, len(m.cols))
 	for i, cell := range m.rows[rowID] {
 		style := lipgloss.NewStyle().
-			Width(m.cols[i].Width).
-			MaxWidth(m.cols[i].Width)
+			Width(m.cols[i].width).
+			MaxWidth(m.cols[i].width)
 
 		var renderedCell string
 		isSelected := i == m.cursor.x &&

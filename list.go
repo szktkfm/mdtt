@@ -116,7 +116,7 @@ func WithTables(tables []TableModel) func(*headerList) {
 		for _, t := range tables {
 			var headerCells []string
 			for _, c := range t.cols {
-				headerCells = append(headerCells, strings.Repeat(" ", 4)+c.Title.value())
+				headerCells = append(headerCells, strings.Repeat(" ", 4)+c.title.value())
 			}
 			header := lipgloss.JoinHorizontal(lipgloss.Left, headerCells...)
 			header = padOrTruncate(header, headerWidth) + " …"

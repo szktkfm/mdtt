@@ -15,11 +15,10 @@ first line
 
 ## Usage2
 
-|TEETE               |COLUMN              |
-|--------------------|--------------------|
-|`Space`             |Toggle preview      |
-|**Esc**, _q_        |Exit with cd        |
-|`y`                 |yank current dir    |
+| TEETE        | COLUMN            |
+| ------------ | ----------------- |
+| `Space`      | Toggle preview    |
+| **Esc**, _q_ | Exit with cd      |
+| `y`          | yank current dira |
 
 second line
-

@@ -19,7 +19,7 @@ type cell struct {
 	err       error
 }
 
-func newCell(value string) cell {
+func NewCell(value string) cell {
 	ta := textinput.New()
 	ta.Placeholder = ""
 	ta.Focus()

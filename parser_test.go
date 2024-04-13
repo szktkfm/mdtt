@@ -9,25 +9,25 @@ import (
 func TestParse(t *testing.T) {
 
 	cols1 := []column{
-		{Title: newCell("Key binding"), Width: 4},
-		{Title: newCell("Description"), Width: 20},
+		{title: NewCell("Key binding"), width: 4},
+		{title: NewCell("Description"), width: 20},
 	}
 	rows1 := []naiveRow{
 		{"`Arrows`, `hjkl`", "Move"},
 	}
-	want1 := NewTable(
+	want1 := NewTableModel(
 		WithColumns(cols1),
 		WithNaiveRows(rows1),
 	)
 
 	cols2 := []column{
-		{Title: newCell("Key binding"), Width: 4},
-		{Title: newCell("Description"), Width: 20},
+		{title: NewCell("Key binding"), width: 4},
+		{title: NewCell("Description"), width: 20},
 	}
 	rows2 := []naiveRow{
 		{"**Esc**, _q_", "Exit"},
 	}
-	want2 := NewTable(
+	want2 := NewTableModel(
 		WithColumns(cols2),
 		WithNaiveRows(rows2),
 	)
@@ -49,7 +49,7 @@ func TestParse(t *testing.T) {
 func isEqualTables(x, y TableModel) bool {
 	ret := true
 	for i, c := range x.cols {
-		if c.Title.value() != y.cols[i].Title.value() {
+		if c.title.value() != y.cols[i].title.value() {
 			ret = false
 		}
 	}

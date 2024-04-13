@@ -60,7 +60,7 @@ func (m Model) View() string {
 }
 
 func NewRoot(opts ...func(*Model)) Model {
-	t := NewTable(
+	t := NewTableModel(
 		WithColumns(DefaultColumns()),
 		WithNaiveRows(DefaultRows()),
 		WithFocused(true),
@@ -115,7 +115,7 @@ func DefaultRows() []naiveRow {
 
 func DefaultColumns() []column {
 	return []column{
-		{Title: newCell(""), Width: 4},
-		{Title: newCell(""), Width: 4},
+		{title: NewCell(""), width: 4},
+		{title: NewCell(""), width: 4},
 	}
 }

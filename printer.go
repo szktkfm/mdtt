@@ -50,24 +50,46 @@ func (t *TableWriter) render(m TableModel) {
 	var sb strings.Builder
 	var width int
 
+	// render header
 	for _, c := range m.cols {
 		sb.WriteString("| ")
-		sb.WriteString(padOrTruncate(c.Title.value(), c.Width-1))
-		width += c.Width
+		sb.WriteString(padOrTruncate(c.title.value(), c.width-1))
+		width += c.width
 	}
 	sb.WriteString("|\n")
 
+	// render delimiter
 	for _, c := range m.cols {
+		log.Debug("column", c.title.value(), c.alignment)
+
+		if c.alignment == "left" {
+			sb.WriteString("|:")
+			sb.WriteString(strings.Repeat("-", c.width-2))
+			sb.WriteString(" ")
+			continue
+		} else if c.alignment == "center" {
+			sb.WriteString("|:")
+			sb.WriteString(strings.Repeat("-", c.width-2))
+			sb.WriteString(":")
+			continue
+		} else if c.alignment == "right" {
+			sb.WriteString("| ")
+			sb.WriteString(strings.Repeat("-", c.width-2))
+			sb.WriteString(":")
+			continue
+		}
+
 		sb.WriteString("| ")
-		sb.WriteString(strings.Repeat("-", c.Width-2))
+		sb.WriteString(strings.Repeat("-", c.width-2))
 		sb.WriteString(" ")
 	}
 	sb.WriteString("|\n")
 
+	// render rows
 	for _, row := range m.rows {
 		for i, c := range row {
 			sb.WriteString("| ")
-			sb.WriteString(padOrTruncate(c.value(), m.cols[i].Width-1))
+			sb.WriteString(padOrTruncate(c.value(), m.cols[i].width-1))
 		}
 		sb.WriteString("|\n")
 	}
