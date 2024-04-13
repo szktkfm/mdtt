@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	baseStyle = lipgloss.NewStyle().
+	tableFrameStyle = lipgloss.NewStyle().
 			BorderStyle(lipgloss.NormalBorder()).
 			BorderForeground(lipgloss.Color("240"))
 	// cell styles
