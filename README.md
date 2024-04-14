@@ -1,6 +1,6 @@
 # 🗓️ mdtt: Markdown Table Editor TUI
 
-Editing markdown tables can often be tedious and error-prone. mdtt is here to change that by providing a Terminal User Interface (TUI) specifically designed for editing markdown tables. By reading markdown files and allowing users to edit them with vim-like keybindings directly in the terminal, mdtt simplifies the process of managing and updating tables. This tool supports both outputting directly to standard output or inplace editing of the original markdown file.
+Editing markdown tables can be tedious. `mdtt` simplifies this with a TUI designed for direct terminal edits using vim-like keybindings. It supports outputting to stdout or inplace editing of markdown files.
 
 ## Installation
 
@@ -83,4 +83,3 @@ This project, mdtt, was inspired by [mdvtbl](https://github.com/karino2/mdvtbl),
 
 ## License
 MIT
-
