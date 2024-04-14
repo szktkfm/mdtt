@@ -36,7 +36,7 @@ mdtt -i filename.md
 To pipe contents into mdtt:
 
 ```sh
-cat filename.md | mdtt
+pbpaste | mdtt | pbcopy
 ```
 
 To create a new table without using an existing file, simply run mdtt without any arguments:
@@ -77,11 +77,11 @@ The TUI supports the following keybindings for efficient table manipulation:
 | q          | Quit              |
 | ?          | Toggle help       |
 
+## TODO: feature
+- 改行をできるようにする
 
-## Contributing
-Contributions to mdtt are welcome! Feel free to fork the repository, make changes, and submit pull requests. For major changes, please open an issue first to discuss what you would like to change.
-
-Please make sure to update tests as appropriate.
+## Acknowledgments
+This project, mdtt, was inspired by [mdvtbl](https://github.com/karino2/mdvtbl), a tool that reads markdown from stdin, allows for table editing in a web view, and outputs to stdout. 
 
 ## License
 MIT
