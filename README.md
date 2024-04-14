@@ -1,4 +1,4 @@
-# mdtt: Markdown Table Editor TUI
+# 🗓️ mdtt: Markdown Table Editor TUI
 
 Editing markdown tables can often be tedious and error-prone. mdtt is here to change that by providing a Terminal User Interface (TUI) specifically designed for editing markdown tables. By reading markdown files and allowing users to edit them with vim-like keybindings directly in the terminal, mdtt simplifies the process of managing and updating tables. This tool supports both outputting directly to standard output or inplace editing of the original markdown file.
 
@@ -55,27 +55,25 @@ mdtt multiple.md
 ## Key Bindings
 The TUI supports the following keybindings for efficient table manipulation:
 
-
-| Key        | Action            |
-| ---------- | ----------------- |
-| ↑/k        | Move up           |
-| ↓/j        | Move down         |
-| ←/h        | Move left         |
-| →/l        | Move right        |
-| b/pgup     | Page up           |
-| f/pgdn     | Page down         |
-| ctrl+u     | Half page up      |
-| ctrl+d     | Half page down    |
-| g/home     | Go to start       |
-| G/end      | Go to end         |
-| i          | Insert mode       |
-| esc/ctrl-c | Normal mode       |
-| o/v+o      | Add row/column    |
-| dd/v+d     | Delete row/column |
-| y          | Copy row          |
-| p          | Paste             |
-| q          | Quit              |
-| ?          | Toggle help       |
+| Key            | Action            |
+| -------------- | ----------------- |
+| `↑`/`k`        | Move up           |
+| `↓`/`j`        | Move down         |
+| `←`/`h`        | Move left         |
+| `b`/`pgup`     | Page up           |
+| `f`/`pgdn`     | Page down         |
+| `ctrl+u`       | Half page up      |
+| `ctrl+d`       | Half page down    |
+| `g`/`home`     | Go to start       |
+| `G`/`end`      | Go to end         |
+| `i`            | Insert mode       |
+| `esc`/`ctrl+c` | Normal mode       |
+| `o`/`v+o`      | Add row/column    |
+| `dd`/`v+d`     | Delete row/column |
+| `y`            | Copy row          |
+| `p`            | Paste             |
+| `q`            | Quit              |
+| `?`            | Toggle help       |
 
 ## TODO: feature
 - 改行をできるようにする
