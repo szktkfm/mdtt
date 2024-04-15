@@ -33,7 +33,8 @@ type TableModel struct {
 	start    int
 	end      int
 	mode     int
-	register register
+	// register is used to store the copied row or column.
+	register interface{}
 	help     help.Model
 }
 
@@ -54,7 +55,14 @@ type column struct {
 	alignment string
 }
 
-type register interface{}
+type rreg struct {
+	row
+}
+type creg struct {
+	column
+	x, y  int
+	cells []cell
+}
 
 type quitMsg struct{}
 
@@ -438,28 +446,67 @@ func (m TableModel) updateWidth(msg widthMsg) {
 }
 
 func (m *TableModel) copy() {
-	if len(m.rows) == 0 {
-		return
+
+	if m.prevKey == "y" {
+		if len(m.rows) == 0 {
+			return
+		}
+		m.copyRow()
+
+	} else if m.prevKey == "v" {
+		if len(m.cols) == 0 {
+			return
+		}
+		m.copyColumn()
 	}
+}
+
+func (m *TableModel) copyColumn() {
+	var col column
+	col.title = NewCell(m.cols[m.cursor.x].title.value())
+	col.width = m.cols[m.cursor.x].width
+
+	var cells []cell
+	for _, r := range m.rows {
+		cells = append(cells, NewCell(r[m.cursor.x].value()))
+	}
+
+	m.register = creg{column: col, x: m.cursor.x, y: m.cursor.y, cells: cells}
+}
+
+func (m *TableModel) copyRow() {
 	var row row
 	for _, cell := range m.rows[m.cursor.y] {
 		row = append(row, NewCell(cell.value()))
 	}
-	m.register = row
+	m.register = rreg{row: row}
 }
 
 func (m *TableModel) paste() {
-	if m.register != nil {
-		m.insertRow(m.cursor.y+1, m.register.(row))
+	switch m.register.(type) {
+	case rreg:
+		if m.register != nil {
+			m.insertRow(m.cursor.y+1, m.register.(rreg).row)
 
-		var ro row
-		for _, cell := range m.register.(row) {
-			ro = append(ro, NewCell(cell.value()))
+			var ro row
+			for _, cell := range m.register.(rreg).row {
+				ro = append(ro, NewCell(cell.value()))
+			}
+			m.register = rreg{row: ro}
 		}
-		m.register = ro
+		m.SetHeight(len(m.rows) + 1)
+		m.moveDown(1)
+	case creg:
+		if m.register != nil {
+			m.addColumn()
+			m.cols[m.cursor.x].title = NewCell(m.register.(creg).title.value())
+			for i := range len(m.rows) {
+				m.rows[i][m.cursor.x] = NewCell(m.register.(creg).cells[i].value())
+			}
+		}
+		m.updateWidth(widthMsg{width: 0})
 	}
-	m.SetHeight(len(m.rows) + 1)
-	m.moveDown(1)
+
 	m.updateViewport()
 }
 
@@ -541,6 +588,7 @@ func (m *TableModel) delete() tea.Cmd {
 		} else if len(m.rows) == 1 {
 			m.switchMode(HEADER)
 		}
+		m.copyRow()
 		m.deleteRow(clamp(m.cursor.y, 0, len(m.rows)-1))
 		m.cursor.y = clamp(m.cursor.y, 0, len(m.rows)-1)
 		m.SetHeight(len(m.rows))
@@ -550,6 +598,7 @@ func (m *TableModel) delete() tea.Cmd {
 		if len(m.cols) == 0 {
 			return nil
 		}
+		m.copyColumn()
 		m.deleteColumn(m.cursor.x)
 		m.cursor.x = clamp(m.cursor.x, 0, len(m.cols)-1)
 		m.updateViewport()
