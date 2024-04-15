@@ -2,15 +2,19 @@
 
 Editing markdown tables can be tedious. `mdtt` simplifies this with a TUI designed for direct terminal edits using vim-like keybindings. It supports outputting to stdout or inplace editing of markdown files.
 
-## Installation
+## 📦 Installation
 
-To install mdtt, ensure you have Go installed on your system, and then run the following command:
+To install mdtt, just install it with go:
 
 ```sh
 go install github.com/szktkfm/mdtt@latest
 ```
 
-## Usage
+Or, download it:
+
+[GitHub Releases](https://github.com/szktkfm/mdtt/releases)
+
+## 🎬 Usage
 To start editing your markdown table, simply run:
 
 ```sh
@@ -27,11 +31,17 @@ While editing, you can utilize the following vim-like keybindings to navigate an
     - Add a new column with `vo`.
     - Delete the current row or column with `dd`, `vd`.
 
+ここにgif挿入
+[]
+
 If you prefer to edit the file directly and save changes back to the same file, use:
 
 ```sh
 mdtt -i filename.md
 ```
+
+ここにgif挿入
+[]
 
 To pipe contents into mdtt:
 
@@ -39,11 +49,17 @@ To pipe contents into mdtt:
 pbpaste | mdtt | pbcopy
 ```
 
+ここにgif挿入
+[]
+
 To create a new table without using an existing file, simply run mdtt without any arguments:
 
 ```sh
 mdtt
 ```
+
+ここにgif挿入
+[]
 
 If multiple tables are present, you'll be greeted with a view to select which table you want to edit.
 
@@ -51,8 +67,7 @@ If multiple tables are present, you'll be greeted with a view to select which ta
 mdtt multiple.md
 ```
 
-
-## Key Bindings
+## ⌨️ Key Bindings
 The TUI supports the following keybindings for efficient table manipulation:
 
 | Key            | Action            |
@@ -75,11 +90,16 @@ The TUI supports the following keybindings for efficient table manipulation:
 | `q`            | Quit              |
 | `?`            | Toggle help       |
 
-## TODO: feature
-- 改行をできるようにする
+## 📝 Features
+- [x] **Vim-like Keybindings**: Navigate and edit tables using familiar vim commands.
+- [x] **Inplace Editing**: Directly modify your original markdown files with the -i option.
+- [x] **Piping Support**
+- [x] **Multi-Table Selection**
+- [ ] **HTML in Cells**: Enable rich content formatting by using HTML directly within table cells.
 
-## Acknowledgments
+
+## 🙏 Acknowledgments
 This project, mdtt, was inspired by [mdvtbl](https://github.com/karino2/mdvtbl), a tool that reads markdown from stdin, allows for table editing in a web view, and outputs to stdout. 
 
 ## License
-MIT
+[MIT](./LICENSE)

@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	Version = "dev"
+	Version = "0.0.1"
 	Commit  = ""
 	Date    = ""
 	BuiltBy = ""
@@ -114,7 +114,7 @@ func init() {
 		"help",
 		"h",
 		false,
-		"help for gh-dash",
+		"help for mdtt",
 	)
 	lipgloss.SetColorProfile(termenv.ANSI256)
 }

@@ -22,8 +22,8 @@ builds:
       - linux
       - windows
       - darwin
-    main: ./cmd/sptui/
-    binary: sptui
+    main: ./cmd/mdtt/
+    binary: mdtt
 
 archives:
   - format: tar.gz
