@@ -113,7 +113,7 @@ func defaultKeyMap() keyMap {
 		),
 		delRowCol: key.NewBinding(
 			key.WithKeys("d"),
-			key.WithHelp("dd/v+d", "add row/column"),
+			key.WithHelp("dd/v+d", "delete row/column"),
 		),
 		yank: key.NewBinding(
 			key.WithKeys("y"),
@@ -166,14 +166,10 @@ func defaultKeyMap() keyMap {
 	}
 }
 
-// ShortHelp returns keybindings to be shown in the mini help view. It's part
-// of the key.Map interface.
 func (k keyMap) ShortHelp() []key.Binding {
 	return []key.Binding{k.help}
 }
 
-// FullHelp returns keybindings for the expanded help view. It's part of the
-// key.Map interface.
 func (k keyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{k.lineUp, k.lineDown, k.left, k.right, k.pageUp, k.pageDown,
