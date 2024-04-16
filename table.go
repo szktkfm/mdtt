@@ -169,7 +169,7 @@ func defaultKeyMap() keyMap {
 		),
 		help: key.NewBinding(
 			key.WithKeys("?"),
-			key.WithHelp("?", "toggle help"),
+			key.WithHelp("?", "help"),
 		),
 	}
 }
