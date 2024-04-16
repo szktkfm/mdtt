@@ -27,9 +27,10 @@ While editing, you can utilize the following vim-like keybindings to navigate an
 - Navigation: Use `hjkl` to move left, down, up, and right respectively.
 - Editing: Enter insert mode by pressing `i` to start editing the cell content, and return to normal mode with `esc` or `ctrl+c`.
 - Row and Column Manipulation:
-    - Add a new row with `o`.
-    - Add a new column with `vo`.
+    - Add a new row or colymn with `o`, `vo`.
     - Delete the current row or column with `dd`, `vd`.
+    - Copy the current row or column with `yy`, `vy`.
+    - Paste a copied row or column with `p`.
 
 ここにgif挿入
 []
@@ -68,7 +69,6 @@ mdtt multiple.md
 ```
 
 ## ⌨️ Key Bindings
-The TUI supports the following keybindings for efficient table manipulation:
 
 | Key            | Action            |
 | -------------- | ----------------- |
@@ -83,9 +83,9 @@ The TUI supports the following keybindings for efficient table manipulation:
 | `G`/`end`      | Go to end         |
 | `i`            | Insert mode       |
 | `esc`/`ctrl+c` | Normal mode       |
-| `o`/`v+o`      | Add row/column    |
-| `dd`/`v+d`     | Delete row/column |
-| `y`            | Copy row          |
+| `o`/`vo`       | Add row/column    |
+| `dd`/`vd`      | Delete row/column |
+| `yy`/`vy`      | Copy row/column   |
 | `p`            | Paste             |
 | `q`            | Quit              |
 | `?`            | Toggle help       |
