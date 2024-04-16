@@ -109,7 +109,7 @@ func (t *tableWriter) replaceTable(fp *os.File, idx int) []byte {
 	fp.Seek(0, 0)
 	b, _ := io.ReadAll(fp)
 	b = append(b[:tl.rang[idx].Start-1],
-		append([]byte(t.text), b[tl.rang[idx].End:]...)...)
+		append([]byte(t.text), b[min(len(b), tl.rang[idx].End):]...)...)
 	return b
 }
 
