@@ -1,5 +1,7 @@
 # 🗓️ mdtt: Markdown Table Editor TUI
 
+<img src="assets/01.gif" width="700">
+
 Editing markdown tables can be tedious. `mdtt` simplifies this with a TUI designed for direct terminal edits using vim-like keybindings. It supports outputting to stdout or inplace editing of markdown files.
 
 ## 📦 Installation
@@ -32,17 +34,16 @@ While editing, you can utilize the following vim-like keybindings to navigate an
     - Copy the current row or column with `yy`, `vy`.
     - Paste a copied row or column with `p`.
 
-ここにgif挿入
-[]
+<img src="assets/02.gif" width=500>
+
 
 If you prefer to edit the file directly and save changes back to the same file, use:
 
 ```sh
 mdtt -i filename.md
 ```
+<img src="assets/03.gif" width=500>
 
-ここにgif挿入
-[]
 
 To pipe contents into mdtt:
 
@@ -50,8 +51,7 @@ To pipe contents into mdtt:
 pbpaste | mdtt | pbcopy
 ```
 
-ここにgif挿入
-[]
+<img src="assets/04.gif" width=500>
 
 To create a new table without using an existing file, simply run mdtt without any arguments:
 
@@ -59,14 +59,11 @@ To create a new table without using an existing file, simply run mdtt without an
 mdtt
 ```
 
-ここにgif挿入
-[]
+<img src="assets/05.gif" width=300>
 
 If multiple tables are present, you'll be greeted with a view to select which table you want to edit.
 
-```sh
-mdtt multiple.md
-```
+<img src="assets/06.gif" width=500>
 
 ## ⌨️ Key Bindings
 
