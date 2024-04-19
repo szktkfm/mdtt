@@ -188,7 +188,7 @@ func (tb *tableModelBuilder) consumeNode(w util.BufWriter, source []byte, node a
 				}
 			default:
 				e := tb.NewElement(node, source)
-				e.finish(tb.buf)
+				e.close(tb.buf)
 			}
 		}
 	}

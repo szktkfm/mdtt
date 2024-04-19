@@ -78,7 +78,7 @@ func (m headerList) view() string {
 	return "\n" + m.list.View()
 }
 
-func newHeaderList(opts ...func(*headerList)) headerList {
+func NewHeaderList(opts ...func(*headerList)) headerList {
 	listItems := []list.Item{}
 	const defaultWidth = 20
 

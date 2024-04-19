@@ -80,7 +80,7 @@ func WithMarkdown(b []byte) Option {
 		if len(tables) == 0 {
 			return fmt.Errorf("no tables found")
 		}
-		list := newHeaderList(
+		list := NewHeaderList(
 			WithTables(tables),
 		)
 		m.table = tables[0]

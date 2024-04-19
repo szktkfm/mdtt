@@ -64,7 +64,6 @@ func (t *tableWriter) render(m TableModel) {
 
 	// render delimiter
 	for _, c := range m.cols {
-		log.Debug("column", c.title.value(), c.alignment)
 
 		if c.alignment == "left" {
 			sb.WriteString("|:")
@@ -109,7 +108,7 @@ func (t *tableWriter) replaceTable(fp *os.File, idx int) []byte {
 	fp.Seek(0, 0)
 	b, _ := io.ReadAll(fp)
 	b = append(b[:tl.rang[idx].Start-1],
-		append([]byte(t.text), b[tl.rang[idx].End:]...)...)
+		append([]byte(t.text), b[min(len(b), tl.rang[idx].End):]...)...)
 	return b
 }
 
@@ -129,41 +128,41 @@ func (tl *tableLocator) findLocations(fp io.Reader) {
 
 	var (
 		prevlen  int
-		prevline string
+		prevLine string
 		pos      int
 		start    int
 	)
 
 	for scanner.Scan() {
-		l := scanner.Text()
+		line := scanner.Text()
 
-		if tl.isCodeFence(l) {
+		if tl.isCodeFence(line) {
 			tl.inCodeBlock = !tl.inCodeBlock
-			tl.codeFence = trimSpace(l)
+			tl.codeFence = trimSpace(line)
 		}
 
 		if tl.inTable {
-			if isBlankLine(l) || isThematicBreak(l) {
+			if isBlankLine(line) || isThematicBreak(line) {
 				tl.inTable = false
 				tl.rang = append(tl.rang, tableRange{Start: start, End: pos})
 			}
 		}
 
-		pos += len(l) + 1
+		pos += len(line) + 1
 
 		if tl.inCodeBlock {
-			prevline = l
-			prevlen = len(l) + 1
+			prevLine = line
+			prevlen = len(line) + 1
 			continue
 		}
 
-		if isTableDelimiter(l) && isTableHeader(prevline, l) {
+		if isTableDelimiter(line) && isTableHeader(prevLine, line) {
 			tl.inTable = true
-			start = pos - len(l) - prevlen
+			start = pos - len(line) - prevlen
 		}
 
-		prevline = l
-		prevlen = len(l) + 1
+		prevLine = line
+		prevlen = len(line) + 1
 	}
 	if tl.inTable {
 		tl.rang = append(tl.rang, tableRange{Start: start, End: pos})

@@ -4,15 +4,14 @@ import (
 	"bytes"
 	"strings"
 
-	"github.com/charmbracelet/log"
 	east "github.com/yuin/goldmark-emoji/ast"
 	"github.com/yuin/goldmark/ast"
 	astext "github.com/yuin/goldmark/extension/ast"
 )
 
 type element struct {
-	open   func(b *bytes.Buffer)
-	finish func(b *bytes.Buffer)
+	open  func(b *bytes.Buffer)
+	close func(b *bytes.Buffer)
 }
 
 // NewElement returns the appropriate render Element for a given node.
@@ -22,12 +21,11 @@ func (tr *tableModelBuilder) NewElement(node ast.Node, source []byte) element {
 
 	case ast.KindLink:
 		n := node.(*ast.Link)
-		log.Debug(n)
 		return element{
 			open: func(b *bytes.Buffer) {
 				b.WriteString("[")
 			},
-			finish: func(b *bytes.Buffer) {
+			close: func(b *bytes.Buffer) {
 				b.WriteString("](")
 				b.WriteString(string(n.Destination))
 				b.WriteString(")")
@@ -44,7 +42,7 @@ func (tr *tableModelBuilder) NewElement(node ast.Node, source []byte) element {
 			open: func(b *bytes.Buffer) {
 				b.WriteString(u)
 			},
-			finish: func(b *bytes.Buffer) {
+			close: func(b *bytes.Buffer) {
 				b.WriteString("")
 			},
 		}
@@ -54,7 +52,7 @@ func (tr *tableModelBuilder) NewElement(node ast.Node, source []byte) element {
 			open: func(b *bytes.Buffer) {
 				b.WriteString("`")
 			},
-			finish: func(b *bytes.Buffer) {
+			close: func(b *bytes.Buffer) {
 				b.WriteString("`")
 			},
 		}
@@ -69,7 +67,7 @@ func (tr *tableModelBuilder) NewElement(node ast.Node, source []byte) element {
 				}
 				b.WriteString("_")
 			},
-			finish: func(b *bytes.Buffer) {
+			close: func(b *bytes.Buffer) {
 				if n.Level == 2 {
 					b.WriteString("**")
 					return
@@ -82,7 +80,7 @@ func (tr *tableModelBuilder) NewElement(node ast.Node, source []byte) element {
 		return element{
 			open: func(b *bytes.Buffer) {
 			},
-			finish: func(b *bytes.Buffer) {
+			close: func(b *bytes.Buffer) {
 			},
 		}
 
@@ -90,7 +88,7 @@ func (tr *tableModelBuilder) NewElement(node ast.Node, source []byte) element {
 		return element{
 			open: func(b *bytes.Buffer) {
 			},
-			finish: func(b *bytes.Buffer) {
+			close: func(b *bytes.Buffer) {
 			},
 		}
 
@@ -99,7 +97,7 @@ func (tr *tableModelBuilder) NewElement(node ast.Node, source []byte) element {
 			open: func(b *bytes.Buffer) {
 				b.WriteString(string(node.Text(source)))
 			},
-			finish: func(b *bytes.Buffer) {
+			close: func(b *bytes.Buffer) {
 				b.WriteString("")
 			},
 		}
@@ -110,7 +108,7 @@ func (tr *tableModelBuilder) NewElement(node ast.Node, source []byte) element {
 			open: func(b *bytes.Buffer) {
 				b.WriteString(string(n.Value.Unicode))
 			},
-			finish: func(b *bytes.Buffer) {
+			close: func(b *bytes.Buffer) {
 				b.WriteString("")
 			},
 		}
@@ -119,7 +117,7 @@ func (tr *tableModelBuilder) NewElement(node ast.Node, source []byte) element {
 		return element{
 			open: func(b *bytes.Buffer) {
 			},
-			finish: func(b *bytes.Buffer) {
+			close: func(b *bytes.Buffer) {
 			},
 		}
 	}
