@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"strings"
 
-	"github.com/charmbracelet/log"
 	east "github.com/yuin/goldmark-emoji/ast"
 	"github.com/yuin/goldmark/ast"
 	astext "github.com/yuin/goldmark/extension/ast"
@@ -22,7 +21,6 @@ func (tr *tableModelBuilder) NewElement(node ast.Node, source []byte) element {
 
 	case ast.KindLink:
 		n := node.(*ast.Link)
-		log.Debug(n)
 		return element{
 			open: func(b *bytes.Buffer) {
 				b.WriteString("[")

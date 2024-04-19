@@ -64,7 +64,6 @@ func (t *tableWriter) render(m TableModel) {
 
 	// render delimiter
 	for _, c := range m.cols {
-		log.Debug("column", c.title.value(), c.alignment)
 
 		if c.alignment == "left" {
 			sb.WriteString("|:")

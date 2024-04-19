@@ -250,7 +250,6 @@ func WithRows(rows []row) TableOption {
 	}
 }
 
-// TODO migration
 func WithNaiveRows(rows []naiveRow) TableOption {
 	return func(m *TableModel) {
 		m.rows = make([]row, len(rows))
