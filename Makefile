@@ -3,7 +3,7 @@ all: build
 
 .PHONY: build
 build:
-	go build -o test ./cmd/mdtt
+	go build ./cmd/mdtt
 
 install:
 	go install ./cmd/mdtt
@@ -17,4 +17,4 @@ test:
 
 .PHONY: clean
 clean:
-	rm -f test debug.log
+	rm -f mdtt debug.log
