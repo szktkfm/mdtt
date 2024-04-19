@@ -2,11 +2,11 @@
 
 <img src="assets/01.gif" width="700">
 
-Editing markdown tables can be tedious. `mdtt` simplifies this with a TUI designed for direct terminal edits using vim-like keybindings. It supports outputting to stdout or inplace editing of markdown files.
+Editing markdown tables can be a drag. `mdtt` makes it easier with a slick TUI for terminal use and vim-style keybindings. It supports output to stdout and in-place file editing.
 
 ## 📦 Installation
 
-To install mdtt, just install it with go:
+To install `mdtt` using Go, run:
 
 ```sh
 go install github.com/szktkfm/mdtt@latest
@@ -17,35 +17,36 @@ Or, download it:
 [GitHub Releases](https://github.com/szktkfm/mdtt/releases)
 
 ## 🎬 Usage
+
 To start editing your markdown table, simply run:
 
 ```sh
 mdtt filename.md
 ```
-When launched, mdtt will display the tables from your markdown file in a TUI. 
+
+Upon launching, `mdtt` will display the tables from your markdown file in a TUI.
 
 While editing, you can utilize the following vim-like keybindings to navigate and modify your tables efficiently:
 
-- Navigation: Use `hjkl` to move left, down, up, and right respectively.
-- Editing: Enter insert mode by pressing `i` to start editing the cell content, and return to normal mode with `esc` or `ctrl+c`.
+- Navigation: Use hjkl for left, down, up, and right movements.
+- Editing: Press i to switch to insert mode and edit cell content, exit insert mode with esc or ctrl+c.
 - Row and Column Manipulation:
-    - Add a new row or colymn with `o`, `vo`.
-    - Delete the current row or column with `dd`, `vd`.
-    - Copy the current row or column with `yy`, `vy`.
-    - Paste a copied row or column with `p`.
+  - Add a new row or colymn with `o`, `vo`.
+  - Delete the current row or column with `dd`, `vd`.
+  - Copy the current row or column with `yy`, `vy`.
+  - Paste a copied row or column with `p`.
 
 <img src="assets/02.gif" width=500>
 
-
-If you prefer to edit the file directly and save changes back to the same file, use:
+For direct editing and saving changes to the same file, use:
 
 ```sh
 mdtt -i filename.md
 ```
+
 <img src="assets/03.gif" width=500>
 
-
-To pipe contents into mdtt:
+You can use piping with `mdtt` as shown below:
 
 ```sh
 pbpaste | mdtt | pbcopy
@@ -53,7 +54,7 @@ pbpaste | mdtt | pbcopy
 
 <img src="assets/04.gif" width=500>
 
-To create a new table without using an existing file, simply run mdtt without any arguments:
+To create a new table without an existing file, run `mdtt` without any arguments:
 
 ```sh
 mdtt
@@ -61,7 +62,7 @@ mdtt
 
 <img src="assets/05.gif" width=300>
 
-If multiple tables are present, you'll be greeted with a view to select which table you want to edit.
+When multiple tables are present, you will be prompted to select the table you wish to edit.
 
 <img src="assets/06.gif" width=500>
 
@@ -88,15 +89,17 @@ If multiple tables are present, you'll be greeted with a view to select which ta
 | `?`            | Toggle help       |
 
 ## 📝 Features
+
 - [x] **Vim-like Keybindings**: Navigate and edit tables using familiar vim commands.
 - [x] **Inplace Editing**: Directly modify your original markdown files with the -i option.
 - [x] **Piping Support**
 - [x] **Multi-Table Selection**
 - [ ] **HTML in Cells**: Enable rich content formatting by using HTML directly within table cells.
 
-
 ## 🙏 Acknowledgments
-This project, mdtt, was inspired by [mdvtbl](https://github.com/karino2/mdvtbl), a tool that reads markdown from stdin, allows for table editing in a web view, and outputs to stdout. 
+
+This project, `mdtt`, was inspired by [mdvtbl](https://github.com/karino2/mdvtbl), a tool that reads markdown from stdin, allows for table editing in a web view, and outputs to stdout.
 
 ## License
+
 [MIT](./LICENSE)
