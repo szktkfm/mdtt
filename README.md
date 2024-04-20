@@ -9,7 +9,7 @@ Editing markdown tables can be a drag. `mdtt` makes it easier with a slick TUI f
 To install `mdtt` using Go, run:
 
 ```sh
-go install github.com/szktkfm/mdtt@latest
+go install github.com/szktkfm/mdtt/cmd/mdtt@latest
 ```
 
 Or, download it:
