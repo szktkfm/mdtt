@@ -17,7 +17,7 @@ type tableWriter struct {
 }
 
 type tableLocator struct {
-	rang        []tableRange
+	ranges      []tableRange
 	inTable     bool
 	codeFence   string
 	inCodeBlock bool
@@ -32,22 +32,26 @@ func Write(m Model) {
 	tw := tableWriter{}
 	tw.render(m.table)
 	if m.inplace {
-		tw.writeFile(m)
-
+		if err := tw.writeFile(m); err != nil {
+			log.Error("Error writing file: ", err)
+			return
+		}
 	} else {
 		fmt.Print(tw.text)
 	}
 }
-
-func (tw *tableWriter) writeFile(m Model) {
+func (tw *tableWriter) writeFile(m Model) error {
 	fp, err := os.Open(m.fpath)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to open file: %w", err)
 	}
 	defer fp.Close()
 	b := tw.replaceTable(fp, m.choose)
 
-	os.WriteFile(m.fpath, b, 0644)
+	if err := os.WriteFile(m.fpath, b, 0644); err != nil {
+		return fmt.Errorf("failed to write file: %w", err)
+	}
+	return nil
 }
 
 func (t *tableWriter) render(m TableModel) {
@@ -107,8 +111,8 @@ func (t *tableWriter) replaceTable(fp *os.File, idx int) []byte {
 
 	fp.Seek(0, 0)
 	b, _ := io.ReadAll(fp)
-	b = append(b[:tl.rang[idx].Start-1],
-		append([]byte(t.text), b[min(len(b), tl.rang[idx].End):]...)...)
+	b = append(b[:tl.ranges[idx].Start-1],
+		append([]byte(t.text), b[min(len(b), tl.ranges[idx].End):]...)...)
 	return b
 }
 
@@ -144,7 +148,7 @@ func (tl *tableLocator) findLocations(fp io.Reader) {
 		if tl.inTable {
 			if isBlankLine(line) || isThematicBreak(line) {
 				tl.inTable = false
-				tl.rang = append(tl.rang, tableRange{Start: start, End: pos})
+				tl.ranges = append(tl.ranges, tableRange{Start: start, End: pos})
 			}
 		}
 
@@ -165,7 +169,7 @@ func (tl *tableLocator) findLocations(fp io.Reader) {
 		prevlen = len(line) + 1
 	}
 	if tl.inTable {
-		tl.rang = append(tl.rang, tableRange{Start: start, End: pos})
+		tl.ranges = append(tl.ranges, tableRange{Start: start, End: pos})
 	}
 }
 
