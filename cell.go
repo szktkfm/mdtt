@@ -29,6 +29,10 @@ func NewCell(value string) cell {
 	return cell{textInput: ta, err: nil}
 }
 
+var (
+	widthPadding = 2
+)
+
 func (m cell) update(msg tea.Msg) (cell, tea.Cmd) {
 	var cmd tea.Cmd
 
@@ -39,7 +43,7 @@ func (m cell) update(msg tea.Msg) (cell, tea.Cmd) {
 	}
 
 	m.textInput, cmd = m.textInput.Update(msg)
-	width := runewidth.StringWidth(m.textInput.Value()) + 2
+	width := runewidth.StringWidth(m.textInput.Value()) + widthPadding
 	return m, tea.Batch(cmd, updateWidthCmd(width))
 }
 

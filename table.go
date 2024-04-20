@@ -232,6 +232,7 @@ func NewTableModel(opts ...TableOption) TableModel {
 	}
 
 	m.updateViewport()
+	m.viewport.Height = m.viewport.Height - 1
 
 	return m
 }
@@ -493,7 +494,7 @@ func (m *TableModel) paste() {
 			}
 			m.register = rreg{row: ro}
 		}
-		m.SetHeight(len(m.rows) + 1)
+		m.SetHeight(len(m.rows))
 		m.moveDown(1)
 	case creg:
 		if m.register != nil {
@@ -780,33 +781,17 @@ func (m *TableModel) renderRow(rowID int) string {
 }
 
 func (m *TableModel) insertRow(idx int, ro row) {
-	var rows []row
-	if len(m.rows) == idx {
-		rows = append(m.rows, ro)
-	} else {
-		rows = append(m.rows[:idx+1], m.rows[idx:]...)
-	}
-	rows[idx] = ro
+	rows := append(m.rows[:idx], append([]row{ro}, m.rows[idx:]...)...)
 	m.SetRows(rows)
 }
 
 func (m *TableModel) deleteRow(idx int) {
-	var rows []row
-	if len(m.rows) == idx {
-		rows = m.rows[:idx-1]
-	} else {
-		rows = append(m.rows[:idx], m.rows[idx+1:]...)
-	}
+	rows := append(m.rows[:idx], m.rows[idx+1:]...)
 	m.SetRows(rows)
 }
 
 func (m *TableModel) deleteColumn(idx int) {
-	var cols []column
-	if len(m.cols) == idx {
-		cols = m.cols[:idx-1]
-	} else {
-		cols = append(m.cols[:idx], m.cols[idx+1:]...)
-	}
+	cols := append(m.cols[:idx], m.cols[idx+1:]...)
 	m.SetColumns(cols)
 
 	var rows []row
@@ -816,36 +801,16 @@ func (m *TableModel) deleteColumn(idx int) {
 	m.SetRows(rows)
 }
 
-func insertCell(r row, idx int, cell cell) row {
-	var ro row
-	if len(r) == idx {
-		ro = append(r, cell)
-	} else {
-		ro = append(r[:idx+1], r[idx:]...)
-	}
-	ro[idx] = cell
-	return ro
+func insertCell(r row, idx int, cel cell) row {
+	return append(r[:idx], append([]cell{cel}, r[idx:]...)...)
 }
 
 func insertCol(c []column, idx int, col column) []column {
-	var newCol []column
-	if len(c) == idx {
-		newCol = append(c, col)
-	} else {
-		newCol = append(c[:idx+1], c[idx:]...)
-	}
-	newCol[idx] = col
-	return newCol
+	return append(c[:idx], append([]column{col}, c[idx:]...)...)
 }
 
 func deleteCell(r row, idx int) row {
-	var row row
-	if len(r) == idx {
-		row = r[:idx-1]
-	} else {
-		row = append(r[:idx], r[idx+1:]...)
-	}
-	return row
+	return append(r[:idx], r[idx+1:]...)
 }
 
 type delPrevKeyMsg struct{}

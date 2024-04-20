@@ -20,7 +20,7 @@ func TestFindSegment(t *testing.T) {
 `
 	b := bytes.NewBuffer([]byte(md))
 	tl.findLocations(b)
-	got := tl.rang[0]
+	got := tl.ranges[0]
 	want := tableRange{
 		Start: 9,
 		End:   50,

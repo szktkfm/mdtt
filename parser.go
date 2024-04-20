@@ -18,11 +18,11 @@ var highPriority = 100
 type tableModelBuilder struct {
 	inTable bool
 	buf     *bytes.Buffer
-	// temprary storage of table rows
+	// temporary storage of table rows
 	rows []string
-	// temprary storage of table columns
+	// temporary storage of table columns
 	cols []string
-	// temprary storage of table alignments
+	// temporary storage of table alignments
 	alignment []string
 	tables    []table
 }
@@ -95,10 +95,7 @@ func (b *tableModelBuilder) build() []TableModel {
 }
 
 func NewTableModelBuilder() *tableModelBuilder {
-	var buf []byte
-	return &tableModelBuilder{
-		buf: bytes.NewBuffer(buf),
-	}
+	return &tableModelBuilder{buf: bytes.NewBuffer(nil)}
 }
 
 // RegisterFuncs implements NodeRenderer.RegisterFuncs.
