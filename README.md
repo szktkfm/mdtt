@@ -73,6 +73,7 @@ When multiple tables are present, you will be prompted to select the table you w
 | `↑`/`k`        | Move up           |
 | `↓`/`j`        | Move down         |
 | `←`/`h`        | Move left         |
+| `→`/`l`        | Move right        |
 | `b`/`pgup`     | Page up           |
 | `f`/`pgdn`     | Page down         |
 | `ctrl+u`       | Half page up      |
