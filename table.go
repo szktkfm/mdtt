@@ -1,6 +1,10 @@
 package mdtt
 
 import (
+	"fmt"
+	"io"
+	"os"
+	"os/exec"
 	"time"
 
 	"github.com/charmbracelet/bubbles/help"
@@ -8,6 +12,8 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/log"
+	"github.com/google/uuid"
 	"github.com/mattn/go-runewidth"
 )
 
@@ -66,6 +72,11 @@ type creg struct {
 
 type quitMsg struct{}
 
+type delPrevKeyMsg struct{}
+
+type closeEditorMsg struct {
+}
+
 func quitCmd() tea.Cmd {
 	return func() tea.Msg {
 		return quitMsg{}
@@ -92,6 +103,7 @@ type keyMap struct {
 	insertMode   key.Binding
 	normalMode   key.Binding
 	quit         key.Binding
+	editor       key.Binding
 	help         key.Binding
 }
 
@@ -160,12 +172,16 @@ func defaultKeyMap() keyMap {
 			key.WithHelp("i", "insert mode"),
 		),
 		normalMode: key.NewBinding(
-			key.WithKeys("esc", "ctrl+c"),
+			key.WithKeys("esc", "ctrl+c", "ctrl+["),
 			key.WithHelp("esc/ctrl-c", "normal mode"),
 		),
 		quit: key.NewBinding(
 			key.WithKeys("q"),
 			key.WithHelp("q", "quit"),
+		),
+		editor: key.NewBinding(
+			key.WithKeys("I"),
+			key.WithHelp("I", "open editor"),
 		),
 		help: key.NewBinding(
 			key.WithKeys("?"),
@@ -307,9 +323,13 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 	case NORMAL, HEADER:
 		switch msg := msg.(type) {
 		case widthMsg:
-			m.updateWidth(msg)
+			m.updateWidth(msg.width)
 		case delPrevKeyMsg:
 			m.prevKey = ""
+		case closeEditorMsg:
+			log.Debug("Close Editor")
+			cmd := m.updateFocusedCell(msg)
+			cmds = append(cmds, cmd)
 		case tea.KeyMsg:
 			switch {
 			case key.Matches(msg, m.keys.help):
@@ -363,13 +383,15 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 				} else {
 					m.switchMode(INSERT)
 				}
+			case key.Matches(msg, m.keys.editor):
+				return m, m.openEditor()
 			}
 			m.prevKey = msg.String()
 		}
 	case INSERT, HEADER_INSERT:
 		switch msg := msg.(type) {
 		case widthMsg:
-			m.updateWidth(msg)
+			m.updateWidth(msg.width)
 		case delPrevKeyMsg:
 			m.prevKey = ""
 		case tea.KeyMsg:
@@ -401,6 +423,68 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+func (m *TableModel) openEditor() tea.Cmd {
+	editor := defaultEditor()
+	tmppath := fmt.Sprintf("%s/mdtt_%s", os.TempDir(), uuid.New())
+	var focusedCell string
+	if m.mode == HEADER {
+		focusedCell = m.cols[m.cursor.x].title.value()
+	} else if m.mode == NORMAL {
+		focusedCell = m.rows[m.cursor.y][m.cursor.x].value()
+	}
+	c := exec.Command(
+		"sh",
+		"-c",
+		fmt.Sprintf("echo '%s' > %s && %s %s",
+			focusedCell,
+			tmppath,
+			editor,
+			tmppath,
+		),
+	)
+	return tea.ExecProcess(c, func(err error) tea.Msg {
+		if err != nil {
+			log.Debug(err)
+			return err
+		}
+
+		f, err := os.Open(tmppath)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		var b []byte
+		b, err = io.ReadAll(f)
+		if err != nil {
+			return err
+		}
+
+		if m.mode == HEADER {
+			m.cols[m.cursor.x].title.setValue(string(b))
+			m.cols[m.cursor.x].title.setCursor(
+				len(m.cols[m.cursor.x].title.value()) - 1,
+			)
+		} else if m.mode == NORMAL {
+			m.rows[m.cursor.y][m.cursor.x].setValue(string(b))
+			m.rows[m.cursor.y][m.cursor.x].setCursor(
+				len(m.rows[m.cursor.y][m.cursor.x].value()) - 1,
+			)
+		}
+
+		m.updateWidth(0)
+
+		return closeEditorMsg{}
+	})
+}
+
+func defaultEditor() string {
+	if e := os.Getenv("EDITOR"); e != "" {
+		return e
+	}
+	return "vim"
+}
+
 func (m *TableModel) enableAllHelp() {
 	m.mode = HELP
 	m.help.ShowAll = true
@@ -411,13 +495,15 @@ func (m *TableModel) disableAllHelp() {
 	m.help.ShowAll = false
 }
 
-func (m *TableModel) updateFocusedCell(msg tea.KeyMsg) tea.Cmd {
-	if m.mode == INSERT {
+func (m *TableModel) updateFocusedCell(msg tea.Msg) tea.Cmd {
+
+	switch m.mode {
+	case INSERT, NORMAL:
 		newCell, cmd := m.rows[m.cursor.y][m.cursor.x].update(msg)
 		m.rows[m.cursor.y][m.cursor.x] = newCell
 		m.updateViewport()
 		return cmd
-	} else if m.mode == HEADER_INSERT {
+	case HEADER, HEADER_INSERT:
 		newCell, cmd := m.cols[m.cursor.x].title.update(msg)
 		m.cols[m.cursor.x].title = newCell
 		m.updateViewport()
@@ -436,8 +522,8 @@ func (m *TableModel) switchMode(mode int) {
 	m.updateViewport()
 }
 
-func (m TableModel) updateWidth(msg widthMsg) {
-	maxWidth := msg.width
+func (m TableModel) updateWidth(w int) {
+	maxWidth := w
 	for _, r := range m.rows {
 		maxWidth = max(runewidth.StringWidth(r[m.cursor.x].value())+2, maxWidth)
 	}
@@ -504,7 +590,7 @@ func (m *TableModel) paste() {
 				m.rows[i][m.cursor.x] = NewCell(m.register.(creg).cells[i].value())
 			}
 		}
-		m.updateWidth(widthMsg{width: 0})
+		m.updateWidth(0)
 	}
 
 	m.updateViewport()
@@ -812,8 +898,6 @@ func insertCol(c []column, idx int, col column) []column {
 func deleteCell(r row, idx int) row {
 	return append(r[:idx], r[idx+1:]...)
 }
-
-type delPrevKeyMsg struct{}
 
 func clearPrevKeyCmd() tea.Cmd {
 	return tea.Tick(time.Millisecond*500, func(t time.Time) tea.Msg {

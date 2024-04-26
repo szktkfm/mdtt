@@ -60,3 +60,11 @@ func (m cell) view() string {
 func (m cell) value() string {
 	return m.textInput.Value()
 }
+
+func (m *cell) setValue(s string) {
+	m.textInput.SetValue(s)
+}
+
+func (m *cell) setCursor(l int) {
+	m.textInput.SetCursor(l)
+}
