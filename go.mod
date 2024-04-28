@@ -8,6 +8,7 @@ require (
 	github.com/charmbracelet/lipgloss v0.9.1
 	github.com/charmbracelet/log v0.3.1
 	github.com/google/go-cmp v0.5.8
+	github.com/google/uuid v1.6.0
 	github.com/mattn/go-isatty v0.0.18
 	github.com/mattn/go-runewidth v0.0.15
 	github.com/muesli/termenv v0.15.2
