@@ -67,6 +67,7 @@ When multiple tables are present, you will be prompted to select the table you w
 <img src="assets/06.gif" width=500>
 
 Press `I` to open the cell in the text editor set as your `$EDITOR`, allowing you to edit the cell directly within your chosen editor.
+
 <img src="assets/07.gif" width=500>
 
 ## ⌨️ Key Bindings
