@@ -198,7 +198,7 @@ func (k keyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{k.lineUp, k.lineDown, k.left, k.right, k.pageUp, k.pageDown,
 			k.halfPageUp, k.halfPageDown, k.gotoTop, k.gotoBottom},
-		{k.insertMode, k.normalMode, k.addRowCol, k.delRowCol,
+		{k.insertMode, k.editor, k.normalMode, k.addRowCol, k.delRowCol,
 			k.yank, k.paste, k.quit, k.help},
 	}
 }
