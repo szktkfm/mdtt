@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"regexp"
+	"runtime"
 	"strings"
 
 	"github.com/charmbracelet/log"
@@ -58,13 +59,18 @@ func (t *tableWriter) render(m TableModel) {
 	var sb strings.Builder
 	var width int
 
+	newline := "\n"
+	if runtime.GOOS == "windows" {
+		newline = "\r\n"
+	}
+
 	// render header
 	for _, c := range m.cols {
 		sb.WriteString("| ")
 		sb.WriteString(padOrTruncate(c.title.value(), max(c.width-1, 2)))
 		width += c.width
 	}
-	sb.WriteString("|\n")
+	sb.WriteString("|" + newline)
 
 	// render delimiter
 	for _, c := range m.cols {
@@ -90,7 +96,7 @@ func (t *tableWriter) render(m TableModel) {
 		sb.WriteString(strings.Repeat("-", max(c.width-2, 1)))
 		sb.WriteString(" ")
 	}
-	sb.WriteString("|\n")
+	sb.WriteString("|" + newline)
 
 	// render rows
 	for _, row := range m.rows {
@@ -98,7 +104,7 @@ func (t *tableWriter) render(m TableModel) {
 			sb.WriteString("| ")
 			sb.WriteString(padOrTruncate(c.value(), max(m.cols[i].width-1, 2)))
 		}
-		sb.WriteString("|\n")
+		sb.WriteString("|" + newline)
 	}
 
 	t.text = sb.String()
@@ -106,12 +112,17 @@ func (t *tableWriter) render(m TableModel) {
 
 func (t *tableWriter) replaceTable(fp *os.File, idx int) []byte {
 
+	nlbytesize := 1
+	if runtime.GOOS == "windows" {
+		nlbytesize = 2
+	}
+
 	tl := tableLocator{}
 	tl.findLocations(fp)
 
 	fp.Seek(0, 0)
 	b, _ := io.ReadAll(fp)
-	b = append(b[:tl.ranges[idx].Start-1],
+	b = append(b[:tl.ranges[idx].Start-nlbytesize],
 		append([]byte(t.text), b[min(len(b), tl.ranges[idx].End):]...)...)
 	return b
 }
@@ -137,6 +148,11 @@ func (tl *tableLocator) findLocations(fp io.Reader) {
 		start    int
 	)
 
+	nlbytesize := 1
+	if runtime.GOOS == "windows" {
+		nlbytesize = 2
+	}
+
 	for scanner.Scan() {
 		line := scanner.Text()
 
@@ -152,11 +168,11 @@ func (tl *tableLocator) findLocations(fp io.Reader) {
 			}
 		}
 
-		pos += len(line) + 1
+		pos += len(line) + nlbytesize
 
 		if tl.inCodeBlock {
 			prevLine = line
-			prevlen = len(line) + 1
+			prevlen = len(line) + nlbytesize
 			continue
 		}
 
@@ -166,7 +182,7 @@ func (tl *tableLocator) findLocations(fp io.Reader) {
 		}
 
 		prevLine = line
-		prevlen = len(line) + 1
+		prevlen = len(line) + nlbytesize
 	}
 	if tl.inTable {
 		tl.ranges = append(tl.ranges, tableRange{Start: start, End: pos})

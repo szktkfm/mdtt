@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"os"
+	"runtime"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -24,6 +25,13 @@ func TestFindSegment(t *testing.T) {
 	want := tableRange{
 		Start: 9,
 		End:   50,
+	}
+
+	if runtime.GOOS == "windows" {
+		want = tableRange{
+			Start: 11,
+			End:   54,
+		}
 	}
 
 	if diff := cmp.Diff(want, got); diff != "" {
