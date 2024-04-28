@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"regexp"
+	"runtime"
 	"strings"
 
 	"github.com/charmbracelet/log"
@@ -58,13 +59,18 @@ func (t *tableWriter) render(m TableModel) {
 	var sb strings.Builder
 	var width int
 
+	newline := "\n"
+	if runtime.GOOS == "windows" {
+		newline = "\r\n"
+	}
+
 	// render header
 	for _, c := range m.cols {
 		sb.WriteString("| ")
 		sb.WriteString(padOrTruncate(c.title.value(), max(c.width-1, 2)))
 		width += c.width
 	}
-	sb.WriteString("|\n")
+	sb.WriteString("|" + newline)
 
 	// render delimiter
 	for _, c := range m.cols {
@@ -90,7 +96,7 @@ func (t *tableWriter) render(m TableModel) {
 		sb.WriteString(strings.Repeat("-", max(c.width-2, 1)))
 		sb.WriteString(" ")
 	}
-	sb.WriteString("|\n")
+	sb.WriteString("|" + newline)
 
 	// render rows
 	for _, row := range m.rows {
@@ -98,7 +104,7 @@ func (t *tableWriter) render(m TableModel) {
 			sb.WriteString("| ")
 			sb.WriteString(padOrTruncate(c.value(), max(m.cols[i].width-1, 2)))
 		}
-		sb.WriteString("|\n")
+		sb.WriteString("|" + newline)
 	}
 
 	t.text = sb.String()
