@@ -7,6 +7,7 @@ require (
 	github.com/charmbracelet/bubbletea v0.25.0
 	github.com/charmbracelet/lipgloss v0.9.1
 	github.com/charmbracelet/log v0.3.1
+	github.com/charmbracelet/x/editor v0.0.0-20240510181320-e66de7a51531
 	github.com/google/go-cmp v0.5.8
 	github.com/google/uuid v1.6.0
 	github.com/mattn/go-isatty v0.0.18

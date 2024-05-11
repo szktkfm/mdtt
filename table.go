@@ -13,6 +13,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
+	"github.com/charmbracelet/x/editor"
 	"github.com/google/uuid"
 	"github.com/mattn/go-runewidth"
 )
@@ -75,6 +76,9 @@ type quitMsg struct{}
 type delPrevKeyMsg struct{}
 
 type closeEditorMsg struct {
+}
+type openEditorMsg struct {
+	path string
 }
 
 func quitCmd() tea.Cmd {
@@ -384,9 +388,11 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 					m.switchMode(INSERT)
 				}
 			case key.Matches(msg, m.keys.editor):
-				return m, m.openEditor()
+				return m, m.writeTmpFile()
 			}
 			m.prevKey = msg.String()
+		case openEditorMsg:
+			return m, m.openEditor(msg.path)
 		}
 	case INSERT, HEADER_INSERT:
 		switch msg := msg.(type) {
@@ -423,8 +429,7 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m *TableModel) openEditor() tea.Cmd {
-	editor := defaultEditor()
+func (m *TableModel) writeTmpFile() tea.Cmd {
 	tmppath := fmt.Sprintf("%s/mdtt_%s", os.TempDir(), uuid.New())
 	var focusedCell string
 	if m.mode == HEADER {
@@ -432,23 +437,39 @@ func (m *TableModel) openEditor() tea.Cmd {
 	} else if m.mode == NORMAL {
 		focusedCell = m.rows[m.cursor.y][m.cursor.x].value()
 	}
-	c := exec.Command(
+	cmd := exec.Command(
 		"sh",
 		"-c",
-		fmt.Sprintf("echo '%s' > %s && %s %s",
+		fmt.Sprintf("echo '%s' > %s ",
 			focusedCell,
-			tmppath,
-			editor,
 			tmppath,
 		),
 	)
-	return tea.ExecProcess(c, func(err error) tea.Msg {
+	return tea.ExecProcess(cmd, func(err error) tea.Msg {
 		if err != nil {
 			log.Debug(err)
 			return err
 		}
 
-		f, err := os.Open(tmppath)
+		return openEditorMsg{path: tmppath}
+	})
+
+}
+
+func (m *TableModel) openEditor(path string) tea.Cmd {
+	cmd, err := editor.Cmd("X", path)
+	if err != nil {
+		log.Debug(err)
+		return nil
+	}
+
+	return tea.ExecProcess(cmd, func(err error) tea.Msg {
+		if err != nil {
+			log.Debug(err)
+			return err
+		}
+
+		f, err := os.Open(path)
 		if err != nil {
 			return err
 		}
@@ -476,13 +497,6 @@ func (m *TableModel) openEditor() tea.Cmd {
 
 		return closeEditorMsg{}
 	})
-}
-
-func defaultEditor() string {
-	if e := os.Getenv("EDITOR"); e != "" {
-		return e
-	}
-	return "vim"
 }
 
 func (m *TableModel) enableAllHelp() {
