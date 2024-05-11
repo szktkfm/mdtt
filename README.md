@@ -100,6 +100,7 @@ Press `I` to open the cell in the text editor set as your `$EDITOR`, allowing yo
 - [x] **Inplace Editing**: Directly modify your original markdown files with the -i option.
 - [x] **Piping Support**
 - [x] **Multi-Table Selection**
+- [x] **External Editor Integration**: Delegate cell editing to an external editor specified by your $EDITOR environment variable.
 - [ ] **HTML in Cells**: Enable rich content formatting by using HTML directly within table cells.
 
 ## 🙏 Acknowledgments
