@@ -28,8 +28,8 @@ Upon launching, `mdtt` will display the tables from your markdown file in a TUI.
 
 While editing, you can utilize the following vim-like keybindings to navigate and modify your tables efficiently:
 
-- Navigation: Use hjkl for left, down, up, and right movements.
-- Editing: Press i to switch to insert mode and edit cell content, exit insert mode with esc or ctrl+c.
+- Navigation: Use `hjkl` for left, down, up, and right movements.
+- Editing: Press `i` to switch to insert mode and edit cell content, exit insert mode with `esc` or `ctrl+c`.
 - Row and Column Manipulation:
   - Add a new row or colymn with `o`, `vo`.
   - Delete the current row or column with `dd`, `vd`.
