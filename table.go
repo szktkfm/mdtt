@@ -62,13 +62,18 @@ type column struct {
 	alignment string
 }
 
-type rreg struct {
+type rowRegister struct {
 	row
 }
-type creg struct {
+type colRegister struct {
 	column
 	x, y  int
 	cells []cell
+}
+
+type cellRegister struct {
+	x, y int
+	cell cell
 }
 
 type quitMsg struct{}
@@ -97,6 +102,8 @@ type keyMap struct {
 	addRowCol    key.Binding
 	delRowCol    key.Binding
 	yank         key.Binding
+	yankCell     key.Binding
+	clearCell    key.Binding
 	paste        key.Binding
 	pageUp       key.Binding
 	pageDown     key.Binding
@@ -139,9 +146,17 @@ func defaultKeyMap() keyMap {
 			key.WithKeys("d"),
 			key.WithHelp("dd/v+d", "delete row/column"),
 		),
+		clearCell: key.NewBinding(
+			key.WithKeys("x"),
+			key.WithHelp("x", "clear cell"),
+		),
 		yank: key.NewBinding(
 			key.WithKeys("y"),
-			key.WithHelp("y", "copy row"),
+			key.WithHelp("yy/v+y", "copy row/column"),
+		),
+		yankCell: key.NewBinding(
+			key.WithKeys("."),
+			key.WithHelp("y.", "copy cell"),
 		),
 		paste: key.NewBinding(
 			key.WithKeys("p"),
@@ -329,9 +344,8 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 		case widthMsg:
 			m.updateWidth(msg.width)
 		case delPrevKeyMsg:
-			m.prevKey = ""
+			m.setPrevKey("")
 		case closeEditorMsg:
-			log.Debug("Close Editor")
 			cmd := m.updateFocusedCell(msg)
 			cmds = append(cmds, cmd)
 		case tea.KeyMsg:
@@ -358,8 +372,13 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 				}
 				cmd := m.delete()
 				cmds = append(cmds, cmd)
+			case key.Matches(msg, m.keys.clearCell):
+				m.clearCell()
+
 			case key.Matches(msg, m.keys.yank):
 				m.copy()
+			case key.Matches(msg, m.keys.yankCell):
+				m.copyCell()
 
 			case key.Matches(msg, m.keys.paste):
 				m.paste()
@@ -390,7 +409,7 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 			case key.Matches(msg, m.keys.editor):
 				return m, m.writeTmpFile()
 			}
-			m.prevKey = msg.String()
+			m.setPrevKey(msg.String())
 		case openEditorMsg:
 			return m, m.openEditor(msg.path)
 		}
@@ -399,7 +418,7 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 		case widthMsg:
 			m.updateWidth(msg.width)
 		case delPrevKeyMsg:
-			m.prevKey = ""
+			m.setPrevKey("")
 		case tea.KeyMsg:
 			switch {
 			case key.Matches(msg, m.keys.normalMode):
@@ -412,7 +431,7 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 				cmd := m.updateFocusedCell(msg)
 				cmds = append(cmds, cmd)
 			}
-			m.prevKey = msg.String()
+			m.setPrevKey(msg.String())
 		}
 	case HELP:
 		switch msg := msg.(type) {
@@ -427,6 +446,19 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 	}
 
 	return m, tea.Batch(cmds...)
+}
+
+func (m TableModel) clearCell() {
+	if m.mode == HEADER {
+		m.cols[m.cursor.x].title.setValue("")
+	} else if m.mode == NORMAL {
+		m.rows[m.cursor.y][m.cursor.x].setValue("")
+	}
+	m.updateViewport()
+}
+
+func (m *TableModel) setPrevKey(s string) {
+	m.prevKey = s
 }
 
 func (m *TableModel) writeTmpFile() tea.Cmd {
@@ -558,6 +590,28 @@ func (m *TableModel) copy() {
 			return
 		}
 		m.copyColumn()
+	} else {
+		m.setPrevKey("y")
+	}
+}
+
+func (m *TableModel) copyCell() {
+	if m.prevKey != "y" {
+		return
+	}
+
+	if m.mode == HEADER {
+		m.register = cellRegister{
+			x:    m.cursor.x,
+			y:    m.cursor.y,
+			cell: m.cols[m.cursor.x].title,
+		}
+	} else if m.mode == NORMAL {
+		m.register = cellRegister{
+			x:    m.cursor.x,
+			y:    m.cursor.y,
+			cell: m.rows[m.cursor.y][m.cursor.x],
+		}
 	}
 }
 
@@ -571,7 +625,7 @@ func (m *TableModel) copyColumn() {
 		cells = append(cells, NewCell(r[m.cursor.x].value()))
 	}
 
-	m.register = creg{column: col, x: m.cursor.x, y: m.cursor.y, cells: cells}
+	m.register = colRegister{column: col, x: m.cursor.x, y: m.cursor.y, cells: cells}
 }
 
 func (m *TableModel) copyRow() {
@@ -579,32 +633,43 @@ func (m *TableModel) copyRow() {
 	for _, cell := range m.rows[m.cursor.y] {
 		row = append(row, NewCell(cell.value()))
 	}
-	m.register = rreg{row: row}
+	m.register = rowRegister{row: row}
 }
 
 func (m *TableModel) paste() {
 	switch m.register.(type) {
-	case rreg:
+	case rowRegister:
 		if m.register != nil {
-			m.insertRow(m.cursor.y+1, m.register.(rreg).row)
+			m.insertRow(m.cursor.y+1, m.register.(rowRegister).row)
 
 			var ro row
-			for _, cell := range m.register.(rreg).row {
+			for _, cell := range m.register.(rowRegister).row {
 				ro = append(ro, NewCell(cell.value()))
 			}
-			m.register = rreg{row: ro}
+			m.register = rowRegister{row: ro}
 		}
 		m.SetHeight(len(m.rows))
 		m.moveDown(1)
-	case creg:
+	case colRegister:
 		if m.register != nil {
 			m.addColumn()
-			m.cols[m.cursor.x].title = NewCell(m.register.(creg).title.value())
+			m.cols[m.cursor.x].title = NewCell(m.register.(colRegister).title.value())
 			for i := range len(m.rows) {
-				m.rows[i][m.cursor.x] = NewCell(m.register.(creg).cells[i].value())
+				m.rows[i][m.cursor.x] = NewCell(m.register.(colRegister).cells[i].value())
 			}
 		}
 		m.updateWidth(0)
+	case cellRegister:
+		if m.register != nil {
+			if m.mode == HEADER {
+				m.cols[m.cursor.x].title = NewCell(m.register.(cellRegister).cell.value())
+			} else if m.mode == NORMAL {
+				m.rows[m.cursor.y][m.cursor.x] = NewCell(m.register.(cellRegister).cell.value())
+			}
+		}
+		m.updateWidth(0)
+	default:
+		return
 	}
 
 	m.updateViewport()
