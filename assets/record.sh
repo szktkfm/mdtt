@@ -58,3 +58,13 @@ echo '| NAME       | OFFICIAL ROM. | TYPE 1    |
 ' > pokemon.md
 
 vhs 07.tape -o 07.gif
+
+echo '| NAME       | OFFICIAL ROM. | TYPE 1    |
+| ---------- | ------------- | --------- |
+| Pikachu    | Pikachu       | Electric  |
+| Charmander | Hitokage      | Electric  |
+| Charmeleon | Lizardo       |           |
+| Charizard  | Lizardon      | Electric  |
+' > pokemon.md
+
+vhs 08.tape -o 08.gif

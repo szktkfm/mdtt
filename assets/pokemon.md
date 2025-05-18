@@ -7,8 +7,3 @@
 | Charmeleon | Lizardo       | Fire     |
 | Charizard  | Lizardon      | Fire     |
 
-## Habitat
-
-| NAME      | HABITAT                          |
-| --------- | -------------------------------- |
-| Pikachu   | Electromagnetically-Active Areas |

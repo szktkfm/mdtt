@@ -35,8 +35,12 @@ While editing, you can utilize the following vim-like keybindings to navigate an
   - Delete the current row or column with `dd`, `vd`.
   - Copy the current row or column with `yy`, `vy`.
   - Paste a copied row or column with `p`.
+  - Clear the current cell with `x`.
+  - Copy the current cell with `y.`.
 
 <img src="assets/02.gif" width=500>
+
+<img src="assets/08.gif" width=500>
 
 For direct editing and saving changes to the same file, use:
 
@@ -89,7 +93,9 @@ Press `I` to open the cell in the text editor set as your `$EDITOR`, allowing yo
 | `esc`/`ctrl+c` | Normal mode       |
 | `o`/`vo`       | Add row/column    |
 | `dd`/`vd`      | Delete row/column |
+| `x`            | Clear cell        |
 | `yy`/`vy`      | Copy row/column   |
+| `y.`           | Copy cell         |
 | `p`            | Paste             |
 | `q`            | Quit              |
 | `?`            | Toggle help       |

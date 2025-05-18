@@ -8,12 +8,10 @@ Sleep 1s
 Type@100ms "mdtt pokemon.md"
 Enter
 Sleep 500ms
-Type "lllhhyypi"
-Backspace@100ms 7
+Type "lllhhyypxi"
 Type@100ms  "Raichu"
 Ctrl+C
-Type "li"
-Backspace@100ms 7
+Type "lxi"
 Type@100ms "Raichu"
 Ctrl+C
 Sleep 500ms
