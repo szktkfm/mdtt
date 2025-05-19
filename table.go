@@ -374,7 +374,6 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 				cmds = append(cmds, cmd)
 			case key.Matches(msg, m.keys.clearCell):
 				m.clearCell()
-
 			case key.Matches(msg, m.keys.yank):
 				m.copy()
 			case key.Matches(msg, m.keys.yankCell):
@@ -448,7 +447,7 @@ func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m TableModel) clearCell() {
+func (m *TableModel) clearCell() {
 	if m.mode == HEADER {
 		m.cols[m.cursor.x].title.setValue("")
 	} else if m.mode == NORMAL {
